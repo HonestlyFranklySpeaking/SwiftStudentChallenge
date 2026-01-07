@@ -4,7 +4,7 @@
 
 ## User settings
 xcuserdata/
-
+CalculusPlayground.xcodeproj/xcuserdata/
 ## Obj-C/Swift specific
 *.hmap
 
@@ -29,7 +29,7 @@ playground.xcworkspace
 # hence it is not needed unless you have added a package configuration file to your project
 # .swiftpm
 
-.build/
+CalculusPlayground.xcodeproj/.build/
 
 # CocoaPods
 #
