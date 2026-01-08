@@ -35,13 +35,19 @@ class Helpers {
         }
     }
     
-    // MARK: - Taylor plotting helper
+    struct TaylorComputationData {
+        let points: [GraphPoint]
+        let coefficients: [Double]
+        let centerX: Double
+    }
     
-    func computeTaylorPoints(functionID: UUID,
-                             degree: Int,
-                             center: Double,
-                             domain: ClosedRange<Double>,
-                             inputs: [GraphPoint]) async -> Result<[GraphPoint], Error> {
+    
+
+    func computeTaylorData(functionID: UUID,
+                           degree: Int,
+                           center: Double,
+                           domain: ClosedRange<Double>,
+                           inputs: [GraphPoint]) async throws -> TaylorComputationData {
         let centerBucket = bucket(center, step: 0.2)
         let xLowerBucket = bucket(domain.lowerBound, step: 0.5)
         let xUpperBucket = bucket(domain.upperBound, step: 0.5)
@@ -53,34 +59,34 @@ class Helpers {
                           xUpperBucket: xUpperBucket,
                           refined: true)
         
-        if let cached = await TaylorCache.shared.getPoints(for: key) {
-            print("CACHE USED for center=\(centerBucket) count:\(cached.count)")
-            return .success(cached)
+        if let cached = await TaylorCache.shared.getFull(for: key) {
+            print("FULL CACHE USED for center=\(centerBucket) count:\(cached.points.count)")
+            return cached
         } else {
-            print("MISS for center=\(centerBucket). Computing…")
+            print("FULL MISS for center=\(centerBucket). Computing…")
         }
         
-        do {
-            let series = try await generateTaylorSeries(for: inputs, degree: degree, center: centerBucket)
-            let start: Double = -80.0
-            let end: Double = 80.0
-            let step: Double = (end - start) / 800
-            let xs = Array(stride(from: start, through: end, by: step))
-            let points = xs.map { x in GraphPoint(xh: x, yv: series.transform(x)) }
-            
-            await TaylorCache.shared.putPoints(points, for: key)
-            print("Successfully computed points for center=\(centerBucket)  count=\(points.count); appended to cache.")
-            return .success(points)
-        } catch {
-            print("[Helpers.computeTaylorPoints] ERROR: \(error.localizedDescription)")
-            return .failure(error)
-        }
+        let seriesResult = try await generateTaylorSeriesResult(for: inputs, degree: degree, center: centerBucket)
+        
+        let start: Double = -80.0
+        let end: Double = 80.0
+        let step: Double = (end - start) / 800
+        let xs = Array(stride(from: start, through: end, by: step))
+        let points = xs.map { x in GraphPoint(xh: x, yv: seriesResult.series.transform(x)) }
+        
+        let full = TaylorComputationData(points: points,
+                                         coefficients: seriesResult.coefficients,
+                                         centerX: seriesResult.centerX)
+        
+        await TaylorCache.shared.putFull(full, for: key)
+        await TaylorCache.shared.putPoints(points, for: key)
+        
+        print("Successfully computed FULL data for center=\(centerBucket)  count=\(points.count); appended to cache.")
+        return full
     }
     
-    // MARK: - Prewarm helper
-    
-    // Ensures the Taylor points for a given function/degree/center bucket exist in cache
-    // using a refined sampling domain. No-op if already cached.
+    // Optional convenience that maps directly to UI payload; also throws on failure
+
     func ensureTaylorPoints(functionID: UUID,
                             degree: Int,
                             centerBucket: Double,
@@ -92,18 +98,118 @@ class Helpers {
                           xLowerBucket: bucket(refinedDomain.lowerBound, step: 0.5),
                           xUpperBucket: bucket(refinedDomain.upperBound, step: 0.5),
                           refined: true)
-        if let _ = await TaylorCache.shared.getPoints(for: key) {
+        
+        if let _ = await TaylorCache.shared.getFull(for: key) {
             return
         }
-        guard let series = try? await generateTaylorSeries(for: inputs, degree: degree, center: centerBucket) else {
+        // Compute once; populate full + points caches
+        guard let series = try? await generateTaylorSeriesResult(for: inputs, degree: degree, center: centerBucket) else {
             return
         }
         let start = refinedDomain.lowerBound
         let end = refinedDomain.upperBound
         let step = (end - start) / 800
         let xs = Array(stride(from: start, through: end, by: step))
-        let pts = xs.map { x in GraphPoint(xh: x, yv: series.transform(x)) }
+        let pts = xs.map { x in GraphPoint(xh: x, yv: series.series.transform(x)) }
+        
+        let full = TaylorComputationData(points: pts,
+                                         coefficients: series.coefficients,
+                                         centerX: series.centerX)
+        await TaylorCache.shared.putFull(full, for: key)
         await TaylorCache.shared.putPoints(pts, for: key)
+    }
+    
+    // MARK: - String/attributed formatting helpers
+    
+    func superscript(_ s: String, scale: CGFloat = 0.7, raise: CGFloat = 6) -> AttributedString {
+        var a = AttributedString(s)
+        a.font = .system(size: UIFont.preferredFont(forTextStyle: .body).pointSize * scale, weight: .regular, design: .monospaced)
+        a.baselineOffset = raise
+        return a
+    }
+    
+    func fixedNumberString(_ value: Double, fractionDigits: Int) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.minimumFractionDigits = fractionDigits
+        formatter.maximumFractionDigits = fractionDigits
+        return formatter.string(from: NSNumber(value: value)) ?? String(format: "%.\(fractionDigits)f", value)
+    }
+    
+    func attributedPolynomial(coeffs: [Double], center: Double) -> AttributedString {
+        guard !coeffs.isEmpty else { return AttributedString("f(x) = 0") }
+        let tol = 1e-10
+        
+        let roundedCenter = (center * 10).rounded() / 10.0
+        
+        var result = AttributedString("f(x) = ")
+        var firstTerm = true
+        
+        func appendSign(_ isNegative: Bool) {
+            if firstTerm {
+                if isNegative { result.append(AttributedString("− ")) }
+            } else {
+                result.append(AttributedString(isNegative ? " − " : " + "))
+            }
+        }
+        
+        for (i, a) in coeffs.enumerated() {
+            if abs(a) < tol { continue }
+            let isNeg = a < 0
+            let absA = abs(a)
+            appendSign(isNeg)
+            
+            var coefAttr = AttributedString()
+            var usedImplicitOne = false
+            
+            if i == 0 {
+                coefAttr = AttributedString(fixedNumberString(absA, fractionDigits: 2))
+            } else {
+                if absA.isApproximately(1.0, tol: 1e-12) {
+                    usedImplicitOne = true
+                } else {
+                    coefAttr = AttributedString(fixedNumberString(absA, fractionDigits: 2) + " ")
+                }
+            }
+            
+            var xPart = AttributedString()
+            if i > 0 {
+                if roundedCenter == 0 {
+                    xPart.append(AttributedString("x"))
+                } else {
+                    let cStr = fixedNumberString(roundedCenter, fractionDigits: 1)
+                    xPart.append(AttributedString("(x − \(cStr))"))
+                }
+                if i >= 2 {
+                    xPart.append(superscript(String(i)))
+                }
+            }
+            
+            if i == 0 {
+                result.append(coefAttr)
+            } else {
+                if !usedImplicitOne { result.append(coefAttr) }
+                result.append(xPart)
+            }
+            
+            firstTerm = false
+        }
+        
+        if firstTerm {
+            return AttributedString("p(x) = 0")
+        }
+        return result
     }
 }
 
+extension Double {
+    func isApproximately(_ other: Double, tol: Double) -> Bool {
+        abs(self - other) <= tol
+    }
+}
+
+extension CGSize {
+    static func - (lhs: CGSize, rhs: CGSize) -> CGSize {
+        CGSize(width: lhs.width - rhs.width, height: lhs.height - rhs.height)
+    }
+}

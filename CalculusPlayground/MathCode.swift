@@ -59,7 +59,7 @@ enum SeriesGenerationError: Error, LocalizedError {
     case missingCenter
     case missingSymetricPoints
     case failedValueMap
-    case faliedDerivative(order: Int)
+    case failedDerivative(order: Int)
     
     var errorDescription: String? {
         switch self {
@@ -68,7 +68,7 @@ enum SeriesGenerationError: Error, LocalizedError {
         case .missingCenter: return "Missing center data point."
         case .missingSymetricPoints: return "Unable to find symetric data points."
         case .failedValueMap: return "Failed value mapping"
-        case .faliedDerivative(let order): return "Failed to compute derivative \(order)."
+        case .failedDerivative(let order): return "Failed to compute derivative \(order)."
         }
     }
 }
@@ -84,8 +84,18 @@ func makeInputs(for function: Function, range: ClosedRange<Double>, step: Double
     }
 }
 
-// Generates the Taylor series polynomial (as a Function) centered at `center`.
-func generateTaylorSeries(for inputs: [GraphPoint], degree: Int, center: Double) async throws -> Function {
+// Result bundle carrying the Taylor series function, its coefficients, and the center used.
+struct TaylorSeriesResult {
+    let series: Function
+    // Coefficients already include factorial divisors: a0, a1, ..., an
+    // Polynomial is sum_i a_i * (x - centerX)^i
+    let coefficients: [Double]
+    let centerX: Double
+}
+
+// Generates the Taylor series polynomial (as a Function) centered at `center`,
+// and returns the coefficients (already factorial-normalized) and the centerX actually used.
+func generateTaylorSeriesResult(for inputs: [GraphPoint], degree: Int, center: Double) async throws -> TaylorSeriesResult {
     guard !inputs.isEmpty else { throw SeriesGenerationError.insufficentData }
     guard (1...5).contains(degree) else { throw SeriesGenerationError.invalidDegree }
     
@@ -125,30 +135,30 @@ func generateTaylorSeries(for inputs: [GraphPoint], degree: Int, center: Double)
     }
     
     func derivative1() throws -> Double {
-        guard hasPair(k: 1) else { throw SeriesGenerationError.faliedDerivative(order: 1) }
+        guard hasPair(k: 1) else { throw SeriesGenerationError.failedDerivative(order: 1) }
         let (fm1, fp1) = try pair(1)
         return (fp1 - fm1) / (2 * h)
     }
     func derivative2() throws -> Double {
-        guard hasPair(k: 1) else { throw SeriesGenerationError.faliedDerivative(order: 2) }
+        guard hasPair(k: 1) else { throw SeriesGenerationError.failedDerivative(order: 2) }
         let (fm1, fp1) = try pair(1)
         return (fp1 - 2 * f0 + fm1) / (h * h)
     }
     func derivative3() throws -> Double {
-        guard hasPair(k: 1), hasPair(k: 2) else { throw SeriesGenerationError.faliedDerivative(order: 3) }
+        guard hasPair(k: 1), hasPair(k: 2) else { throw SeriesGenerationError.failedDerivative(order: 3) }
         let (fm2, fp2) = try pair(2)
         let (fm1, fp1) = try pair(1)
         let numerator = (fp2 - 2*fp1 + 2*fm1 - fm2)
         return numerator / (2 * pow(h, 3))
     }
     func derivative4() throws -> Double {
-        guard hasPair(k: 1), hasPair(k: 2) else { throw SeriesGenerationError.faliedDerivative(order: 4) }
+        guard hasPair(k: 1), hasPair(k: 2) else { throw SeriesGenerationError.failedDerivative(order: 4) }
         let (fm2, fp2) = try pair(2)
         let (fm1, fp1) = try pair(1)
         return (fm2 - 4*fm1 + 6*f0 - 4*fp1 + fp2) / pow(h, 4)
     }
     func derivative5() throws -> Double {
-        guard hasPair(k: 1), hasPair(k: 2), hasPair(k: 3) else { throw SeriesGenerationError.faliedDerivative(order: 5) }
+        guard hasPair(k: 1), hasPair(k: 2), hasPair(k: 3) else { throw SeriesGenerationError.failedDerivative(order: 5) }
         let (fm3, fp3) = try pair(3)
         let (fm2, fp2) = try pair(2)
         let (fm1, fp1) = try pair(1)
@@ -181,7 +191,13 @@ func generateTaylorSeries(for inputs: [GraphPoint], degree: Int, center: Double)
         }
         return sum
     }
-    return series
+    return TaylorSeriesResult(series: series, coefficients: coeffs, centerX: centerX)
+}
+
+// Maintains original API for callers that only want the Function.
+func generateTaylorSeries(for inputs: [GraphPoint], degree: Int, center: Double) async throws -> Function {
+    let result = try await generateTaylorSeriesResult(for: inputs, degree: degree, center: center)
+    return result.series
 }
 
 // Async version of generate taylor series
@@ -217,6 +233,17 @@ actor TaylorCache {
     private var pointsLRU: [PlotKey] = []
     private let pointsCapacity = 800// tune this
     
+    // New: full results cache
+    private struct FullEntry {
+        let points: [GraphPoint]
+        let coefficients: [Double]
+        let centerX: Double
+    }
+    private var fullCache: [PlotKey: FullEntry] = [:]
+    private var fullLRU: [PlotKey] = []
+    private let fullCapacity = 400 // tune separately if desired
+    
+    // Points cache API
     func getPoints(for key: PlotKey) -> [GraphPoint]? {
         if let v = pointsCache[key] {
             if let idx = pointsLRU.firstIndex(of: key) { pointsLRU.remove(at: idx) }
@@ -236,6 +263,27 @@ actor TaylorCache {
         }
     }
     
+
+    func getFull(for key: PlotKey) -> Helpers.TaylorComputationData? {
+        if let v = fullCache[key] {
+            if let idx = fullLRU.firstIndex(of: key) { fullLRU.remove(at: idx) }
+            fullLRU.append(key)
+            return Helpers.TaylorComputationData(points: v.points, coefficients: v.coefficients, centerX: v.centerX)
+        }
+        return nil
+    }
+     
+    func putFull(_ data: Helpers.TaylorComputationData, for key: PlotKey) {
+        let entry = FullEntry(points: data.points, coefficients: data.coefficients, centerX: data.centerX)
+        fullCache[key] = entry
+        if let idx = fullLRU.firstIndex(of: key) { fullLRU.remove(at: idx) }
+        fullLRU.append(key)
+        while fullLRU.count > fullCapacity {
+            let oldest = fullLRU.removeFirst()
+            fullCache.removeValue(forKey: oldest)
+        }
+    }
+    
     private func keySummary(_ key: PlotKey) -> String {
         "func:\(key.functionID.uuidString.prefix(6)) deg:\(key.degree) c:\(String(format: "%.2f", key.centerBucket)) x:[\(String(format: "%.1f", key.xLowerBucket)),\(String(format: "%.1f", key.xUpperBucket))] \(key.refined ? "R" : "C")"
     }
@@ -245,3 +293,4 @@ actor TaylorCache {
 func bucket(_ value: Double, step: Double) -> Double {
     (value / step).rounded() * step
 }
+
