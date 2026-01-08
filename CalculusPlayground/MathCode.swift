@@ -7,9 +7,12 @@
 
 import Foundation
 
+///Represents a point on a graph, with xh and yv as x and y
 class GraphPoint: Identifiable {
     var id: UUID = UUID()
+    ///x
     var xh: Double
+    ///y
     var yv: Double
     
     init(xh: Double, yv: Double) {
@@ -17,7 +20,7 @@ class GraphPoint: Identifiable {
         self.yv = yv
     }
 }
-
+///Represents a mathematical function
 class Function: Identifiable, Hashable {
     var id: UUID = UUID()
     
@@ -28,23 +31,17 @@ class Function: Identifiable, Hashable {
     }
     
     static let identity: Function = .init(transform: { $0 })
-    static let sine: Function = .init(transform: { sin($0) })
+    static let sine: Function = .init(transform: { 5 * sin($0 / 3) })
     static let square: Function = .init(transform: { $0 * $0 })
-    static let naturalLog: Function = .init(transform: { log($0) })
+    static let naturalLog: Function = .init(transform: { 4 * log($0) })
     static let inverse: Function = .init(transform: { 1 / $0 })
     static let exp: Function = .init(transform: { pow(2.71828, $0) })
     
-    static let humpy: Function = .init { x in
-        let x2 = x * x
-        let x4 = x2 * x2
-        let x6 = x4 * x2
-        let x8 = x4 * x4
-      
-        let b8 = 1.0e-10
-        let b6 = 1.2e-7
-        let b4 = 3.0e-4
-        let b2 = 0.002
-        return b8 * x8 - b6 * x6 + b4 * x4 - b2 * x2
+    static let humpy: Function = .init {
+        let x = $0 / 1.5
+        let a = (x+10)*(x+10)*(x-15)
+        let b = (x+30)*(x+3)*(x-10)*(x-30)
+        return a * b / 1200000
     }
     
     static func == (lhs: Function, rhs: Function) -> Bool {
@@ -293,4 +290,5 @@ actor TaylorCache {
 func bucket(_ value: Double, step: Double) -> Double {
     (value / step).rounded() * step
 }
+
 

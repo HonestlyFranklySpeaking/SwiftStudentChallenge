@@ -8,13 +8,16 @@
 import SwiftUI
 import Charts
 
+///A helper class that uses a shared singleton static member (Helpers.shared)
 class Helpers {
     static let shared = Helpers()
+    ///Gap between dots of the function and taylor series as well as the snap of the slider for center control for Taylor Series and Tangent
     let increment = 0.05
     
+    ///Number of seconds before graph updates
     let maxUpdateFrequency = 0.05
     
-    
+    ///Graph gradient
     let gradient = MeshGradient(
         width: 2,
         height: 2,
@@ -38,7 +41,7 @@ class Helpers {
             .foregroundStyle(.secondary)
         }
     }
-    
+    /// Result of Taylor Series computation
     struct TaylorComputationData {
         let points: [GraphPoint]
         let coefficients: [Double]
@@ -46,7 +49,7 @@ class Helpers {
     }
     
     
-
+    ///Computes Taylor Series from dot data, or uses cache
     func computeTaylorData(functionID: UUID,
                            degree: Int,
                            center: Double,
@@ -91,6 +94,7 @@ class Helpers {
     
     // Optional convenience that maps directly to UI payload; also throws on failure
 
+    ///Adds entry to cache if not already present there
     func ensureTaylorPoints(functionID: UUID,
                             degree: Int,
                             centerBucket: Double,
@@ -124,14 +128,14 @@ class Helpers {
     }
     
     // MARK: - String/attributed formatting helpers
-    
+    /// Creates visually appealing superscript in UI
     func superscript(_ s: String, scale: CGFloat = 0.7, raise: CGFloat = 6) -> AttributedString {
         var a = AttributedString(s)
         a.font = .system(size: UIFont.preferredFont(forTextStyle: .body).pointSize * scale, weight: .regular, design: .monospaced)
         a.baselineOffset = raise
         return a
     }
-    
+    /// Creates a string representation of a double with only fractionDigits digits
     func fixedNumberString(_ value: Double, fractionDigits: Int) -> String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
@@ -140,6 +144,7 @@ class Helpers {
         return formatter.string(from: NSNumber(value: value)) ?? String(format: "%.\(fractionDigits)f", value)
     }
     
+    ///Creates a string representation of a polynomial using a [Double] of coefficients and center using a (x-c)^n + form
     func attributedPolynomial(coeffs: [Double], center: Double) -> AttributedString {
         guard !coeffs.isEmpty else { return AttributedString("f(x) = 0") }
         let tol = 1e-10
@@ -217,3 +222,5 @@ extension CGSize {
         CGSize(width: lhs.width - rhs.width, height: lhs.height - rhs.height)
     }
 }
+
+
