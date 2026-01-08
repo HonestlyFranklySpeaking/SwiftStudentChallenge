@@ -76,7 +76,7 @@ struct DerivativePlayground: View {
                 )
                 .onChange(of: center) {
                     let now = CACurrentMediaTime()
-                    if now - lastPlotTime > 0.2 {
+                    if now - lastPlotTime > Helpers.shared.maxUpdateFrequency {
                         lastPlotTime = now
                         Task {
                             currentRequestID &+= 1

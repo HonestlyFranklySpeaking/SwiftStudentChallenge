@@ -11,6 +11,10 @@ import Charts
 class Helpers {
     static let shared = Helpers()
     let increment = 0.05
+    
+    let maxUpdateFrequency = 0.05
+    
+    
     let gradient = MeshGradient(
         width: 2,
         height: 2,
