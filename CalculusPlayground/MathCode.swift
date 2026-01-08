@@ -101,7 +101,7 @@ func generateTaylorSeriesResult(for inputs: [GraphPoint], degree: Int, center: D
     
     let sortedData = inputs.sorted { $0.xh < $1.xh }
     
-    let tol = 0.006
+    let tol = 11.0/20.0 * Helpers.shared.increment
     func isClose(_ a: Double, _ b: Double) -> Bool { abs(a - b) <= tol }
     func y(at targetX: Double) -> Double? {
         sortedData.first(where: { isClose($0.xh, targetX) })?.yv

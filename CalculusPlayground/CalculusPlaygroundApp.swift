@@ -11,7 +11,12 @@ import SwiftUI
 struct CalculusPlaygroundApp: App {
     var body: some Scene {
         WindowGroup {
-            TaylorSeriesPlayground()
+            VStack {
+                TaylorSeriesPlayground()
+//                DerivativePlayground()
+//                
+            }
+            
         }
     }
 }

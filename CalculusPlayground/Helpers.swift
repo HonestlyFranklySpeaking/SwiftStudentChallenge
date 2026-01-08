@@ -10,7 +10,7 @@ import Charts
 
 class Helpers {
     static let shared = Helpers()
-    
+    let increment = 0.05
     let gradient = MeshGradient(
         width: 2,
         height: 2,
@@ -48,7 +48,7 @@ class Helpers {
                            center: Double,
                            domain: ClosedRange<Double>,
                            inputs: [GraphPoint]) async throws -> TaylorComputationData {
-        let centerBucket = bucket(center, step: 0.2)
+        let centerBucket = bucket(center, step: Helpers.shared.increment)
         let xLowerBucket = bucket(domain.lowerBound, step: 0.5)
         let xUpperBucket = bucket(domain.upperBound, step: 0.5)
         
