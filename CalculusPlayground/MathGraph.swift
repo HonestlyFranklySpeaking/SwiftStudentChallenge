@@ -28,7 +28,7 @@ struct MathGraph: View {
     
     private func invertedScale(from sliderValue: Double) -> Double {
         let clamped = max(5, min(100, sliderValue))
-        return 105 - clamped // 5 -> 100, 100 -> 5
+        return 105 - clamped
     }
     
     var body: some View {

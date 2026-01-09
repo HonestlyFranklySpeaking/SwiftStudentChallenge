@@ -10,7 +10,7 @@ import Charts
 
 struct DerivativePlayground: View {
     
-    @State var function: Function = Function.naturalLog
+    @State var function: Function = Function.sine
     @State var inputPoints: [GraphPoint] = []
     
     @State var taylorExpansionPoints: [GraphPoint] = [.init(xh: -4, yv: 19), .init(xh: 1, yv: -3)]

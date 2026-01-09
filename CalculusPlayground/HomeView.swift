@@ -11,18 +11,27 @@ struct HomeView: View {
     var body: some View {
         NavigationStack {
             Form {
-                NavigationLink(destination: TaylorSeriesPlayground()) {
-                    Text("Taylor Series")
-                }
-                NavigationLink(destination: TangentLinePlayground()) {
-                    Text("Tangent Lines")
-                }
-                NavigationLink(destination: DerivativePlayground()) {
-                    Text("Derivative")
+                Section("Basics") {
+                    NavigationLink(destination: TangentLinePlayground()) {
+                        Text("Tangent Lines")
+                    }
+                    NavigationLink(destination: DerivativePlayground()) {
+                        Text("Derivative")
+                    }
                 }
                 
+                
+                Section("Applied") {
+                    NavigationLink(destination: TaylorSeriesPlayground()) {
+                        Text("Taylor Series")
+                    }
+                }
+                
+                Section("Abstract") {
+                    
+                }
             }
-            .navigationTitle("Calculus Playgrounds")
+            .navigationTitle("Math Playgrounds")
         }
     }
 }
