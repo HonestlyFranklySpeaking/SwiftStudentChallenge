@@ -14,6 +14,8 @@ class Helpers {
     ///Gap between dots of the function and taylor series as well as the snap of the slider for center control for Taylor Series and Tangent
     let increment = 0.08
     
+    let derivativeH = 0.08
+    
     ///Number of seconds before graph updates
     let maxUpdateFrequency = 0.08
     
