@@ -24,12 +24,9 @@ struct DerivativePlayground: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 12) {
-                MathGraph(xDomain: $xDomain, inputPoints: $inputPoints, derivedPoints: $derivativePoints)
+                MathGraph(computedDataLabel: "Derivative", xDomain: $xDomain, inputPoints: $inputPoints, derivedPoints: $derivativePoints)
                 
-                Label("f(x)", systemImage: "circle.fill")
-                    .foregroundStyle(Gradient(colors: [.green, .blue]))
-                Label("f'(x)", systemImage: "circle.fill")
-                    .foregroundStyle(Gradient(colors: [.pink, .purple]))
+                
                 Spacer()
 
                 Text(debug)

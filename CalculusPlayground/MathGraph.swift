@@ -11,20 +11,19 @@ import Charts
 struct MathGraph: View {
     @State private var graphScale: Double = 30
     
+    var computedDataLabel: String
+    
     @Binding var xDomain: ClosedRange<Double>
     @State private var yDomain: ClosedRange<Double> = -30...30
     
     @Binding var inputPoints: [GraphPoint]
-    
     @Binding var derivedPoints: [GraphPoint]
-    
     
     @State private var pinchScale: CGFloat = 1.0
     @State private var pinchBaseXDomain: ClosedRange<Double> = -30...30
     @State private var pinchBaseYDomain: ClosedRange<Double> = -30...30
     
     @State private var lastDragTranslation: CGSize = .zero
-    
     
     private func invertedScale(from sliderValue: Double) -> Double {
         let clamped = max(5, min(100, sliderValue))
@@ -33,14 +32,15 @@ struct MathGraph: View {
     
     var body: some View {
         Chart {
+            // Axes
             RuleMark(x: .value("Origin X", 0))
                 .foregroundStyle(.gray.opacity(0.6))
                 .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [6, 6]))
-            
             RuleMark(y: .value("Origin Y", 0))
                 .foregroundStyle(.gray.opacity(0.6))
                 .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [6, 6]))
             
+            // Series 1: Function
             ForEach(inputPoints) { point in
                 LineMark(
                     x: .value("X", point.xh),
@@ -49,19 +49,29 @@ struct MathGraph: View {
                 )
                 .interpolationMethod(.linear)
             }
-            .foregroundStyle(Gradient(colors: [.green, .blue]))
+            // Tie the style to the series value "Function" so the legend can map it
+            .foregroundStyle(by: .value("Line", "Function"))
             
+            // Series 2: Derived
             ForEach(derivedPoints) { point in
                 LineMark(
                     x: .value("X", point.xh),
                     y: .value("Y", point.yv),
-                    series: .value("Line", "Derived")
+                    series: .value("Line", computedDataLabel)
                 )
                 .interpolationMethod(.linear)
             }
-            .foregroundStyle(Gradient(colors: [.pink, .purple]))
-            .lineStyle(StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round))
+            // Tie the style to the series value "Derived"
+            .foregroundStyle(by: .value("Line", computedDataLabel))
         }
+        // Provide a mapping so each series gets the gradient you want
+        .chartForegroundStyleScale([
+            "Function": AnyShapeStyle(Gradient(colors: [.green, .blue])),
+            computedDataLabel: AnyShapeStyle(Gradient(colors: [.pink, .purple]))
+        ])
+        // Now the legend has two categorical series to show
+        .chartLegend(position: .bottom, alignment: .leading, spacing: 8)
+        
         .chartXScale(domain: xDomain)
         .chartYScale(domain: yDomain)
         .chartPlotStyle { plotArea in
@@ -80,7 +90,8 @@ struct MathGraph: View {
         }
         .chartYAxis {
             Helpers.shared.axisMarks(for: invertedScale(from: graphScale), position: .leading)
-        }                .frame(height: 340)
+        }
+        .frame(height: 340)
         .padding(.horizontal, 8)
         .gesture(dragGesture)
         .gesture(magnificationGesture)
@@ -91,7 +102,6 @@ struct MathGraph: View {
             pinchBaseXDomain = xDomain
             pinchBaseYDomain = yDomain
         }
-        
     }
     
     private var dragGesture: some Gesture {
@@ -156,6 +166,5 @@ struct MathGraph: View {
                 pinchScale = 1.0
             }
     }
-    
 }
 

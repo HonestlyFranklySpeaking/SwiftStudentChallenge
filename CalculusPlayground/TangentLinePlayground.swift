@@ -32,7 +32,7 @@ struct TangentLinePlayground: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 12) {
-                MathGraph(xDomain: $xDomain, inputPoints: $inputPoints, derivedPoints: $taylorExpansionPoints)
+                MathGraph(computedDataLabel: "Tangent", xDomain: $xDomain, inputPoints: $inputPoints, derivedPoints: $taylorExpansionPoints)
                 
                 Spacer()
                 
