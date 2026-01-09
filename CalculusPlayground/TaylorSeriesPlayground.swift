@@ -9,8 +9,8 @@ import SwiftUI
 import Charts
 
 struct TaylorSeriesPlayground: View {
-
-    @State var function: Function = Function.naturalLog
+    
+    @State var function: Function = Function.sine
     @State var inputPoints: [GraphPoint] = []
     
     @State var taylorExpansionPoints: [GraphPoint] = [.init(xh: -4, yv: 19), .init(xh: 1, yv: -3)]
@@ -22,6 +22,7 @@ struct TaylorSeriesPlayground: View {
     
     @State private var debug: String = ""
     
+    @State private var cachingProgress = 0
     
     @State private var lastPlotTime: TimeInterval = 0
     
@@ -33,7 +34,7 @@ struct TaylorSeriesPlayground: View {
     @State private var displayedCoefficients: [Double] = []
     @State private var displayedCenter: Double? = nil
     
-  
+    
     var body: some View {
         NavigationStack {
             VStack(spacing: 12) {
@@ -95,7 +96,6 @@ struct TaylorSeriesPlayground: View {
                                 debug = error.localizedDescription
                             }
                         }
-                        restartPrewarmer()
                     }
                 }
                 )
@@ -157,50 +157,75 @@ struct TaylorSeriesPlayground: View {
                 prewarmTask = nil
             }
             .toolbar {
-                Menu {
-                    Picker(selection: $function) {
-                        Text("Sine").tag(Function.sine)
-                        Text("Exponential").tag(Function.exp)
-                        Text("Square").tag(Function.square)
-                        Text("Natural Log").tag(Function.naturalLog)
-                        Text("Polynomial").tag(Function.humpy)
-                        Text("Inverse").tag(Function.inverse)
-                    } label: {
-                        Text("Functions")
-                    }
-                } label: {
-                    Image(systemName: "graph.2d")
-                        .frame(width: 36, height: 36)
-                        .background(Circle().fill(.purple))
-                }
-                .onChange(of: function) { _, _ in
-                    Task {
-                        await generateData()
-                        currentRequestID &+= 1
-                        let requestID = currentRequestID
-                        do {
-                            let display = try await Helpers.shared.computeTaylorData(functionID: function.id, degree: degree,center: center, domain: xDomain, inputs: inputPoints)
+                
+                ToolbarItem {
+                    if cachingProgress < 252 {
+                        HStack {
+                            Text("Caching...")
+                                .foregroundColor(.secondary)
+                                .padding()
                             
-                            guard requestID == currentRequestID else { return }
-                            taylorExpansionPoints = display.points
-                            displayedCoefficients = display.coefficients
-                            displayedCenter = display.centerX
-                            debug = ""
-                        } catch {
-                            guard requestID == currentRequestID else { return }
-                            taylorExpansionPoints = []
-                            displayedCoefficients = []
-                            displayedCenter = nil
-                            debug = error.localizedDescription
+                            // The circular gauge
+                            Gauge(value: Double(cachingProgress), in: 0...252) {
+                                // Empty label, as we have a custom one in the HStack
+                            }
+                            .gaugeStyle(ToolbarGauge())
+                            .frame(width: 34, height: 34)
                         }
+                        .fixedSize()
+                    } else {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundStyle(.green)
+                        
                     }
-                    restartPrewarmer()
+                }
+                
+                ToolbarSpacer()
+                
+                ToolbarItem {
+                    Menu {
+                        Picker(selection: $function) {
+                            Text("Sine").tag(Function.sine)
+                            Text("Exponential").tag(Function.exp)
+                            Text("Square").tag(Function.square)
+                            Text("Natural Log").tag(Function.naturalLog)
+                            Text("Polynomial").tag(Function.humpy)
+                            Text("Inverse").tag(Function.inverse)
+                        } label: {
+                            Text("Functions")
+                        }
+                    } label: {
+                        Image(systemName: "graph.2d")
+                    }
+                    .onChange(of: function) { _, _ in
+                        Task {
+                            await generateData()
+                            currentRequestID &+= 1
+                            let requestID = currentRequestID
+                            do {
+                                let display = try await Helpers.shared.computeTaylorData(functionID: function.id, degree: degree,center: center, domain: xDomain, inputs: inputPoints)
+                                
+                                guard requestID == currentRequestID else { return }
+                                taylorExpansionPoints = display.points
+                                displayedCoefficients = display.coefficients
+                                displayedCenter = display.centerX
+                                debug = ""
+                            } catch {
+                                guard requestID == currentRequestID else { return }
+                                taylorExpansionPoints = []
+                                displayedCoefficients = []
+                                displayedCenter = nil
+                                debug = error.localizedDescription
+                            }
+                        }
+                        restartPrewarmer()
+                    }
                 }
             }
         }
     }
     
-
+    
     
     func generateData() async {
         let f = function
@@ -214,6 +239,11 @@ struct TaylorSeriesPlayground: View {
     }
     
     private func restartPrewarmer() {
+        withAnimation {
+            cachingProgress = 0
+        }
+        
+        
         prewarmTask?.cancel()
         prewarmTask = Task(priority: .background) {
             await runContinuousPrewarmer()
@@ -257,11 +287,12 @@ struct TaylorSeriesPlayground: View {
                                                         refinedDomain: refinedDomain,
                                                         inputs: inputsCopy)
                 await Task.yield()
+                
+                cachingProgress += 1
             }
             print("STAGE 1 COMPLETE: ensured inputs \(debugArray)")
         }
         
-        // 2) Other functions: exactly one center each
         print("PREWARM STAGE 2: Ensuring inputs for all other functions")
         for f in allFunctions where f.id != currentFuncID {
             if Task.isCancelled { return }
@@ -307,6 +338,12 @@ struct TaylorSeriesPlayground: View {
                 await Task.yield()
             }
             print("PREWARM added inputs \(debugArray) to cache.")
+            
+            cachingProgress += (2 - completedBranches)
+        }
+        
+        withAnimation {
+            cachingProgress += 1
         }
         
         print("<<<EXTENDED EXPANSION COMPLETE>>>")
@@ -320,3 +357,4 @@ struct TaylorSeriesPlayground: View {
 #Preview {
     TangentLinePlayground()
 }
+

@@ -12,10 +12,10 @@ import Charts
 class Helpers {
     static let shared = Helpers()
     ///Gap between dots of the function and taylor series as well as the snap of the slider for center control for Taylor Series and Tangent
-    let increment = 0.05
+    let increment = 0.08
     
     ///Number of seconds before graph updates
-    let maxUpdateFrequency = 0.05
+    let maxUpdateFrequency = 0.08
     
     ///Graph gradient
     let gradient = MeshGradient(
@@ -66,11 +66,11 @@ class Helpers {
                           xUpperBucket: xUpperBucket,
                           refined: true)
         
-        if let cached = await TaylorCache.shared.getFull(for: key) {
-            print("FULL CACHE USED for center=\(centerBucket) count:\(cached.points.count)")
+        if let cached = await TaylorCache.shared.getPoints(for: key) {
+            print("CACHE USED for center=\(centerBucket) count:\(cached.points.count)")
             return cached
         } else {
-            print("FULL MISS for center=\(centerBucket). Computing…")
+            print("CACHE MISS for center=\(centerBucket). Computing…")
         }
         
         let seriesResult = try await generateTaylorSeriesResult(for: inputs, degree: degree, center: centerBucket)
@@ -85,15 +85,12 @@ class Helpers {
                                          coefficients: seriesResult.coefficients,
                                          centerX: seriesResult.centerX)
         
-        await TaylorCache.shared.putFull(full, for: key)
-        await TaylorCache.shared.putPoints(points, for: key)
+        await TaylorCache.shared.putPoints(full, for: key)
         
-        print("Successfully computed FULL data for center=\(centerBucket)  count=\(points.count); appended to cache.")
+        print("Successfully computed data for center=\(centerBucket)  count=\(points.count); appended to cache.")
         return full
     }
     
-    // Optional convenience that maps directly to UI payload; also throws on failure
-
     ///Adds entry to cache if not already present there
     func ensureTaylorPoints(functionID: UUID,
                             degree: Int,
@@ -107,10 +104,9 @@ class Helpers {
                           xUpperBucket: bucket(refinedDomain.upperBound, step: 0.5),
                           refined: true)
         
-        if let _ = await TaylorCache.shared.getFull(for: key) {
+        if let _ = await TaylorCache.shared.getPoints(for: key) {
             return
         }
-        // Compute once; populate full + points caches
         guard let series = try? await generateTaylorSeriesResult(for: inputs, degree: degree, center: centerBucket) else {
             return
         }
@@ -123,8 +119,7 @@ class Helpers {
         let full = TaylorComputationData(points: pts,
                                          coefficients: series.coefficients,
                                          centerX: series.centerX)
-        await TaylorCache.shared.putFull(full, for: key)
-        await TaylorCache.shared.putPoints(pts, for: key)
+        await TaylorCache.shared.putPoints(full, for: key)
     }
     
     // MARK: - String/attributed formatting helpers
@@ -222,5 +217,3 @@ extension CGSize {
         CGSize(width: lhs.width - rhs.width, height: lhs.height - rhs.height)
     }
 }
-
-

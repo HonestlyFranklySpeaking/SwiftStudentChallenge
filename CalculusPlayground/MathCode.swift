@@ -226,22 +226,13 @@ struct PlotKey: Hashable, Equatable {
 actor TaylorCache {
     static let shared = TaylorCache()
     
-    private var pointsCache: [PlotKey: [GraphPoint]] = [:]
+    // Unified cache stores full TaylorComputationData under "points" naming scheme.
+    private var pointsCache: [PlotKey: Helpers.TaylorComputationData] = [:]
     private var pointsLRU: [PlotKey] = []
-    private let pointsCapacity = 800// tune this
+    private let pointsCapacity = 1600// tune this
     
-    // New: full results cache
-    private struct FullEntry {
-        let points: [GraphPoint]
-        let coefficients: [Double]
-        let centerX: Double
-    }
-    private var fullCache: [PlotKey: FullEntry] = [:]
-    private var fullLRU: [PlotKey] = []
-    private let fullCapacity = 400 // tune separately if desired
-    
-    // Points cache API
-    func getPoints(for key: PlotKey) -> [GraphPoint]? {
+    // Points cache API (now returns full payload)
+    func getPoints(for key: PlotKey) -> Helpers.TaylorComputationData? {
         if let v = pointsCache[key] {
             if let idx = pointsLRU.firstIndex(of: key) { pointsLRU.remove(at: idx) }
             pointsLRU.append(key)
@@ -250,8 +241,8 @@ actor TaylorCache {
         return nil
     }
     
-    func putPoints(_ pts: [GraphPoint], for key: PlotKey) {
-        pointsCache[key] = pts
+    func putPoints(_ data: Helpers.TaylorComputationData, for key: PlotKey) {
+        pointsCache[key] = data
         if let idx = pointsLRU.firstIndex(of: key) { pointsLRU.remove(at: idx) }
         pointsLRU.append(key)
         while pointsLRU.count > pointsCapacity {
@@ -260,35 +251,11 @@ actor TaylorCache {
         }
     }
     
-
-    func getFull(for key: PlotKey) -> Helpers.TaylorComputationData? {
-        if let v = fullCache[key] {
-            if let idx = fullLRU.firstIndex(of: key) { fullLRU.remove(at: idx) }
-            fullLRU.append(key)
-            return Helpers.TaylorComputationData(points: v.points, coefficients: v.coefficients, centerX: v.centerX)
-        }
-        return nil
-    }
-     
-    func putFull(_ data: Helpers.TaylorComputationData, for key: PlotKey) {
-        let entry = FullEntry(points: data.points, coefficients: data.coefficients, centerX: data.centerX)
-        fullCache[key] = entry
-        if let idx = fullLRU.firstIndex(of: key) { fullLRU.remove(at: idx) }
-        fullLRU.append(key)
-        while fullLRU.count > fullCapacity {
-            let oldest = fullLRU.removeFirst()
-            fullCache.removeValue(forKey: oldest)
-        }
-    }
-    
     private func keySummary(_ key: PlotKey) -> String {
         "func:\(key.functionID.uuidString.prefix(6)) deg:\(key.degree) c:\(String(format: "%.2f", key.centerBucket)) x:[\(String(format: "%.1f", key.xLowerBucket)),\(String(format: "%.1f", key.xUpperBucket))] \(key.refined ? "R" : "C")"
     }
 }
 
-
 func bucket(_ value: Double, step: Double) -> Double {
     (value / step).rounded() * step
 }
-
-
