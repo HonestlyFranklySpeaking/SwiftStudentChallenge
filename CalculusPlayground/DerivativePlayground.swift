@@ -8,8 +8,8 @@
 import SwiftUI
 import Charts
 
-struct DerivativePlayground: View, Identifiable {
-    var id = UUID()
+struct DerivativePlayground: View {
+    
     @State var function: Function = Function.naturalLog
     @State var inputPoints: [GraphPoint] = []
     

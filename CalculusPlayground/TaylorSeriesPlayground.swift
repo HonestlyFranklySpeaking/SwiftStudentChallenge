@@ -8,8 +8,7 @@
 import SwiftUI
 import Charts
 
-struct TaylorSeriesPlayground: View, Identifiable {
-    var id = UUID()
+struct TaylorSeriesPlayground: View {
 
     @State var function: Function = Function.naturalLog
     @State var inputPoints: [GraphPoint] = []

@@ -22,7 +22,7 @@ struct HomeView: View {
                 }
                 
             }
-            .navigationTitle("Calculus Playground")
+            .navigationTitle("Calculus Playgrounds")
         }
     }
 }
@@ -33,8 +33,4 @@ struct HomeView: View {
 
 
 
-protocol IdentifiableView: Identifiable, View {
-    var id: UUID { get set }
-    var body: any View { get set }
-}
 

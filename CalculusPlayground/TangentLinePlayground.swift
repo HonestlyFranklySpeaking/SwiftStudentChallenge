@@ -8,9 +8,7 @@
 import SwiftUI
 import Charts
 
-struct TangentLinePlayground: View, Identifiable {
-    var id = UUID()
-
+struct TangentLinePlayground: View {
     @State var function: Function = Function.naturalLog
     @State var inputPoints: [GraphPoint] = []
     

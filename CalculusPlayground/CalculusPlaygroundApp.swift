@@ -12,9 +12,7 @@ struct CalculusPlaygroundApp: App {
     var body: some Scene {
         WindowGroup {
             VStack {
-                TaylorSeriesPlayground()
-//                DerivativePlayground()
-//                
+                HomeView()
             }
             
         }
