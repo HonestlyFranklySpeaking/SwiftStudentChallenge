@@ -31,7 +31,7 @@ class Function: Identifiable, Hashable {
     }
     
     static let identity: Function = .init(transform: { $0 })
-    static let sine: Function = .init(transform: { 5 * sin($0 / 3) })
+    static let sine: Function = .init(transform: { 5 * sin($0 / 2) })
     static let square: Function = .init(transform: { $0 * $0 })
     static let naturalLog: Function = .init(transform: { 4 * log($0) })
     static let inverse: Function = .init(transform: { 1 / $0 })
@@ -50,8 +50,19 @@ class Function: Identifiable, Hashable {
     func hash(into hasher: inout Hasher) { hasher.combine(id) }
 }
 
+enum computeError: Error, LocalizedError {
+    case insufficientData
+    
+    
+    var errorDescription: String? {
+        switch self {
+        case .insufficientData: return "Insufficient data to compute the requested Taylor series."
+        }
+    }
+}
+
 enum SeriesGenerationError: Error, LocalizedError {
-    case insufficentData
+    case insufficientData
     case invalidDegree
     case missingCenter
     case missingSymetricPoints
@@ -60,7 +71,7 @@ enum SeriesGenerationError: Error, LocalizedError {
     
     var errorDescription: String? {
         switch self {
-        case .insufficentData: return "Insufficient data to compute the requested Taylor series."
+        case .insufficientData: return "Insufficient data to compute the requested Taylor series."
         case .invalidDegree: return "Invalid degree. Supported degrees are 1 through 5."
         case .missingCenter: return "Missing center data point."
         case .missingSymetricPoints: return "Unable to find symetric data points."
@@ -90,10 +101,31 @@ struct TaylorSeriesResult {
     let centerX: Double
 }
 
+
+
+func mapDerivative(for inputs: [GraphPoint]) async throws -> [GraphPoint] {
+    guard !inputs.isEmpty else { throw computeError.insufficientData }
+    
+    let sortedData = inputs.sorted { $0.xh < $1.xh }
+    
+    var derivatives = [GraphPoint]()
+    
+    for i in 0..<(inputs.count - 1) {
+        let dy = inputs[i + 1].yv - inputs[i].yv
+        let dx = inputs[i + 1].xh - inputs[i].xh
+        
+        derivatives.append(GraphPoint(xh: (dy/dx), yv: inputs[i].xh))
+    }
+    
+    
+    return derivatives
+}
+
+
 // Generates the Taylor series polynomial (as a Function) centered at `center`,
 // and returns the coefficients (already factorial-normalized) and the centerX actually used.
 func generateTaylorSeriesResult(for inputs: [GraphPoint], degree: Int, center: Double) async throws -> TaylorSeriesResult {
-    guard !inputs.isEmpty else { throw SeriesGenerationError.insufficentData }
+    guard !inputs.isEmpty else { throw SeriesGenerationError.insufficientData }
     guard (1...5).contains(degree) else { throw SeriesGenerationError.invalidDegree }
     
     let sortedData = inputs.sorted { $0.xh < $1.xh }
@@ -223,15 +255,13 @@ struct PlotKey: Hashable, Equatable {
     }
 }
 
-actor TaylorCache {
-    static let shared = TaylorCache()
+actor TaylorSeriesCache {
+    static let shared = TaylorSeriesCache()
     
-    // Unified cache stores full TaylorComputationData under "points" naming scheme.
     private var pointsCache: [PlotKey: Helpers.TaylorComputationData] = [:]
     private var pointsLRU: [PlotKey] = []
-    private let pointsCapacity = 1600// tune this
+    private let cacheCapacity = 1600
     
-    // Points cache API (now returns full payload)
     func getPoints(for key: PlotKey) -> Helpers.TaylorComputationData? {
         if let v = pointsCache[key] {
             if let idx = pointsLRU.firstIndex(of: key) { pointsLRU.remove(at: idx) }
@@ -245,7 +275,7 @@ actor TaylorCache {
         pointsCache[key] = data
         if let idx = pointsLRU.firstIndex(of: key) { pointsLRU.remove(at: idx) }
         pointsLRU.append(key)
-        while pointsLRU.count > pointsCapacity {
+        while pointsLRU.count > cacheCapacity {
             let oldest = pointsLRU.removeFirst()
             pointsCache.removeValue(forKey: oldest)
         }

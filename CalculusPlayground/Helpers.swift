@@ -68,7 +68,7 @@ class Helpers {
                           xUpperBucket: xUpperBucket,
                           refined: true)
         
-        if let cached = await TaylorCache.shared.getPoints(for: key) {
+        if let cached = await TaylorSeriesCache.shared.getPoints(for: key) {
             print("CACHE USED for center=\(centerBucket) count:\(cached.points.count)")
             return cached
         } else {
@@ -87,7 +87,7 @@ class Helpers {
                                          coefficients: seriesResult.coefficients,
                                          centerX: seriesResult.centerX)
         
-        await TaylorCache.shared.putPoints(full, for: key)
+        await TaylorSeriesCache.shared.putPoints(full, for: key)
         
         print("Successfully computed data for center=\(centerBucket)  count=\(points.count); appended to cache.")
         return full
@@ -106,7 +106,7 @@ class Helpers {
                           xUpperBucket: bucket(refinedDomain.upperBound, step: 0.5),
                           refined: true)
         
-        if let _ = await TaylorCache.shared.getPoints(for: key) {
+        if let _ = await TaylorSeriesCache.shared.getPoints(for: key) {
             return
         }
         guard let series = try? await generateTaylorSeriesResult(for: inputs, degree: degree, center: centerBucket) else {
@@ -121,7 +121,7 @@ class Helpers {
         let full = TaylorComputationData(points: pts,
                                          coefficients: series.coefficients,
                                          centerX: series.centerX)
-        await TaylorCache.shared.putPoints(full, for: key)
+        await TaylorSeriesCache.shared.putPoints(full, for: key)
     }
     
     // MARK: - String/attributed formatting helpers

@@ -25,9 +25,6 @@ struct TangentLinePlayground: View {
     
     @State private var currentRequestID: UInt64 = 0
     
-
-    
-    
     @State private var displayedCoefficients: [Double] = []
     @State private var displayedCenter: Double? = nil
     

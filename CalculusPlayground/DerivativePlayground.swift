@@ -8,40 +8,195 @@
 import SwiftUI
 import Charts
 
-
 struct DerivativePlayground: View {
-    @State var xDomain: ClosedRange<Int> = -30...30
-    @State var xDomainDouble: ClosedRange<Double> = -30...30
-    @State var function: Function = .naturalLog
-    @State var functionPoints: [GraphPoint] = []
-    @State var graphPoints: [GraphPoint] = []
-    init() {
-        updatePoints()
-    }
-    func updatePoints() {
-        points = []
-        for x in xDomain {
-            let doubleX = Double(x)
-            let doubleY = function.transform(doubleX)
-            if doubleY.isNormal {
-                functionPoints.append(GraphPoint(xh: doubleX, yv: doubleY))
+    
+    @State var function: Function = Function.sine
+    @State var inputPoints: [GraphPoint] = []
+    
+    @State var taylorExpansionPoints: [GraphPoint] = [.init(xh: -4, yv: 19), .init(xh: 1, yv: -3)]
+    
+    @State var xDomain: ClosedRange<Double> = -30...30
+    
+    @State var degree: Int = 5
+    @State var center: Double = 6.7
+    
+    @State private var debug: String = ""
+    
+    
+    @State private var lastPlotTime: TimeInterval = 0
+    
+    @State private var currentRequestID: UInt64 = 0
+    
+    @State private var prewarmTask: Task<Void, Never>? = nil
+    
+    
+    @State private var displayedCoefficients: [Double] = []
+    @State private var displayedCenter: Double? = nil
+    
+  
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 12) {
+                MathGraph(xDomain: $xDomain, inputPoints: $inputPoints, taylorExpansionPoints: $taylorExpansionPoints)
+                
+                Spacer()
+                
+                if let c = displayedCenter, !displayedCoefficients.isEmpty {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(Helpers.shared.attributedPolynomial(coeffs: displayedCoefficients, center: c))
+                            .font(.system(.body, design: .monospaced))
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(alignment: .leading)
+                }
+                
+                Stepper("Number of Terms: \(degree)", value: $degree, in: 1...5)
+                    .onChange(of: degree) {
+                        Task {
+                            currentRequestID &+= 1
+                            let requestID = currentRequestID
+                            do {
+                                let display = try await Helpers.shared.computeTaylorData(functionID: function.id, degree: degree, center: center, domain: xDomain, inputs: inputPoints)
+                                guard requestID == currentRequestID else { return }
+                                taylorExpansionPoints = display.points
+                                displayedCoefficients = display.coefficients
+                                displayedCenter = display.centerX
+                                debug = ""
+                            } catch {
+                                guard requestID == currentRequestID else { return }
+                                taylorExpansionPoints = []
+                                displayedCoefficients = []
+                                displayedCenter = nil
+                                debug = error.localizedDescription
+                            }
+                        }
+                        restartPrewarmer()
+                    }
+                
+                Text("Center: \(Helpers.shared.fixedNumberString(center, fractionDigits: 2))")
+                
+                Slider(value: $center, in: -10...10, step: Helpers.shared.increment, onEditingChanged: { editing in
+                    if !editing {
+                        Task {
+                            currentRequestID &+= 1
+                            let requestID = currentRequestID
+                            do {
+                                let display = try await Helpers.shared.computeTaylorData(functionID: function.id, degree: degree, center: center, domain: xDomain, inputs: inputPoints)
+                                guard requestID == currentRequestID else { return }
+                                taylorExpansionPoints = display.points
+                                displayedCoefficients = display.coefficients
+                                displayedCenter = display.centerX
+                                debug = ""
+                            } catch {
+                                guard requestID == currentRequestID else { return }
+                                taylorExpansionPoints = []
+                                displayedCoefficients = []
+                                displayedCenter = nil
+                                debug = error.localizedDescription
+                            }
+                        }
+                        restartPrewarmer()
+                    }
+                }
+                )
+                .onChange(of: center) {
+                    let now = CACurrentMediaTime()
+                    if now - lastPlotTime > Helpers.shared.maxUpdateFrequency {
+                        lastPlotTime = now
+                        Task {
+                            currentRequestID &+= 1
+                            let requestID = currentRequestID
+                            do {
+                                let display = try await Helpers.shared.computeTaylorData(functionID: function.id, degree: degree, center: center, domain: xDomain, inputs: inputPoints)
+                                guard requestID == currentRequestID else { return }
+                                taylorExpansionPoints = display.points
+                                displayedCoefficients = display.coefficients
+                                displayedCenter = display.centerX
+                                debug = ""
+                            } catch {
+                                guard requestID == currentRequestID else { return }
+                                taylorExpansionPoints = []
+                                displayedCoefficients = []
+                                displayedCenter = nil
+                                debug = error.localizedDescription
+                            }
+                        }
+                    }
+                }
+                
+                Text(debug)
             }
-
-                let derivativePoint = try? calculateDerivative(function: function, at: doubleX)
-            if let dPoint = derivativePoint {
-                graphPoints.append(GraphPoint(xh: doubleX, yv: dPoint))
-
+            .navigationTitle("Taylor Series")
+            .padding()
+            .task {
+                await generateData()
+                
+                currentRequestID &+= 1
+                let requestID = currentRequestID
+                do {
+                    let display = try await Helpers.shared.computeTaylorData(functionID: function.id, degree: degree, center: center, domain: xDomain, inputs: inputPoints)
+                    if requestID == currentRequestID {
+                        taylorExpansionPoints = display.points
+                        print("\n \n DEBUG!!!!!!!!!!!!!! taylor expansion points generated \n \n ")
+                        displayedCoefficients = display.coefficients
+                        displayedCenter = display.centerX
+                        debug = ""
+                    }
+                } catch {
+                    if requestID == currentRequestID {
+                        taylorExpansionPoints = []
+                        displayedCoefficients = []
+                        displayedCenter = nil
+                        debug = error.localizedDescription
+                    }
+                }
+                restartPrewarmer()
+            }
+            .onDisappear {
+                prewarmTask?.cancel()
+                prewarmTask = nil
+            }
+            .toolbar {
+                Menu {
+                    Picker(selection: $function) {
+                        Text("Sine").tag(Function.sine)
+                        Text("Exponential").tag(Function.exp)
+                        Text("Square").tag(Function.square)
+                        Text("Natural Log").tag(Function.naturalLog)
+                        Text("Polynomial").tag(Function.humpy)
+                        Text("Inverse").tag(Function.inverse)
+                    } label: {
+                        Text("Functions")
+                    }
+                } label: {
+                    Image(systemName: "graph.2d")
+                        .frame(width: 36, height: 36)
+                        .background(Circle().fill(.purple))
+                }
+                .onChange(of: function) { _, _ in
+                    Task {
+                        await generateData()
+                        currentRequestID &+= 1
+                        let requestID = currentRequestID
+                        do {
+                            let display = try await Helpers.shared.computeTaylorData(functionID: function.id, degree: degree,center: center, domain: xDomain, inputs: inputPoints)
+                            
+                            guard requestID == currentRequestID else { return }
+                            taylorExpansionPoints = display.points
+                            displayedCoefficients = display.coefficients
+                            displayedCenter = display.centerX
+                            debug = ""
+                        } catch {
+                            guard requestID == currentRequestID else { return }
+                            taylorExpansionPoints = []
+                            displayedCoefficients = []
+                            displayedCenter = nil
+                            debug = error.localizedDescription
+                        }
+                    }
+                    restartPrewarmer()
+                }
+            }
         }
     }
-    var body: some View {
-        MathGraph(xDomain: $xDomainDouble, inputPoints: $points, )
-    }
-}
-
-
-
-
-
-#Preview {
-    DerivativePlayground()
-}
+    
