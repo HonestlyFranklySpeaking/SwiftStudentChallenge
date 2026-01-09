@@ -5,21 +5,24 @@
 //  Created by Timothy Qin on 8/1/26.
 //
 import SwiftUI
-let views: [any IdentifiableView] = [TaylorSeriesPlayground(), TangentLinePlayground(), DerivativePlayground()]
+
 
 struct HomeView: View {
     var body: some View {
         NavigationStack {
             Form {
-                ForEach(views) {view in
-                    NavigationLink("Taylor Series 2") {
-                        AnyView(view)
-                    }
-                    
-                    
+                NavigationLink(destination: TaylorSeriesPlayground()) {
+                    Text("Taylor Series")
                 }
+                NavigationLink(destination: TangentLinePlayground()) {
+                    Text("Tangent Lines")
+                }
+                NavigationLink(destination: DerivativePlayground()) {
+                    Text("Derivatives")
+                }
+                
             }
-            .navigationTitle("Function Playground")
+            .navigationTitle("Calculus Playground")
         }
     }
 }

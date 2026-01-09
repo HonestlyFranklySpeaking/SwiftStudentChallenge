@@ -8,7 +8,7 @@
 import SwiftUI
 import Charts
 
-struct TangentLinePlayground: View, IdentifiableView {
+struct TangentLinePlayground: View, Identifiable {
     var id = UUID()
 
     @State var function: Function = Function.naturalLog
