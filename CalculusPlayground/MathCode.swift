@@ -114,7 +114,7 @@ func mapDerivative(for inputs: [GraphPoint]) async throws -> [GraphPoint] {
         let dy = inputs[i + 1].yv - inputs[i].yv
         let dx = inputs[i + 1].xh - inputs[i].xh
         
-        derivatives.append(GraphPoint(xh: (dy/dx), yv: inputs[i].xh))
+        derivatives.append(GraphPoint(xh: inputs[i].xh, yv: (dy/dx)))
     }
     
     

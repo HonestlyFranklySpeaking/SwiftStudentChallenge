@@ -16,7 +16,7 @@ struct MathGraph: View {
     
     @Binding var inputPoints: [GraphPoint]
     
-    @Binding var taylorExpansionPoints: [GraphPoint]
+    @Binding var derivedPoints: [GraphPoint]
     
     
     @State private var pinchScale: CGFloat = 1.0
@@ -42,19 +42,20 @@ struct MathGraph: View {
                 .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [6, 6]))
             
             ForEach(inputPoints) { point in
-                PointMark(
-                    x: .value("X", point.xh),
-                    y: .value("Y", point.yv)
-                )
-                .symbol(.circle)
-                .foregroundStyle(.blue)
-                .symbolSize(25)
-            }
-            
-            ForEach(taylorExpansionPoints) { point in
                 LineMark(
                     x: .value("X", point.xh),
-                    y: .value("Y", point.yv)
+                    y: .value("Y", point.yv),
+                    series: .value("Line", "Function")
+                )
+                .interpolationMethod(.linear)
+            }
+            .foregroundStyle(Gradient(colors: [.green, .blue]))
+            
+            ForEach(derivedPoints) { point in
+                LineMark(
+                    x: .value("X", point.xh),
+                    y: .value("Y", point.yv),
+                    series: .value("Line", "Derived")
                 )
                 .interpolationMethod(.linear)
             }
