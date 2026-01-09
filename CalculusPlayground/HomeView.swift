@@ -18,7 +18,7 @@ struct HomeView: View {
                     Text("Tangent Lines")
                 }
                 NavigationLink(destination: DerivativePlayground()) {
-                    Text("Derivatives")
+                    Text("Derivative")
                 }
                 
             }
@@ -26,7 +26,6 @@ struct HomeView: View {
         }
     }
 }
-
 
 #Preview {
     HomeView()
@@ -38,4 +37,4 @@ protocol IdentifiableView: Identifiable, View {
     var id: UUID { get set }
     var body: any View { get set }
 }
-    
+
