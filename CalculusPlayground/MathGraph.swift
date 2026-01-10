@@ -11,6 +11,8 @@ import Charts
 struct MathGraph: View {
     @State private var graphScale: Double = 30
     
+    @State var visibility = [true, true, true]
+    
     var computedDataLabel: String
     var secondDataLabel: String = ""
     
@@ -31,6 +33,7 @@ struct MathGraph: View {
         let clamped = max(5, min(100, sliderValue))
         return 105 - clamped
     }
+    ///Seperated chart for faster type check
     var plainChart: some View {
         Chart {
             // Axes
@@ -41,85 +44,116 @@ struct MathGraph: View {
                 .foregroundStyle(.gray.opacity(0.6))
                 .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [6, 6]))
             
-            // Series 1: Function
-            ForEach(inputPoints) { point in
-                LineMark(
-                    x: .value("X", point.xh),
-                    y: .value("Y", point.yv),
-                    series: .value("Line", "Function")
-                )
-                .interpolationMethod(.linear)
+            if visibility[0] {
+                // Series 1: Function
+                ForEach(inputPoints) { point in
+                    LineMark(
+                        x: .value("X", point.xh),
+                        y: .value("Y", point.yv),
+                        series: .value("Line", "Function")
+                    )
+                    .interpolationMethod(.linear)
+                }
+                // Tie the style to the series value "Function" so the legend can map it
+                .foregroundStyle(by: .value("Line", "Function"))
             }
-            // Tie the style to the series value "Function" so the legend can map it
-            .foregroundStyle(by: .value("Line", "Function"))
+            if visibility[1] {
+                // Series 2: Derived
+                ForEach(derivedPoints) { point in
+                    LineMark(
+                        x: .value("X", point.xh),
+                        y: .value("Y", point.yv),
+                        series: .value("Line", computedDataLabel)
+                    )
+                    .interpolationMethod(.linear)
+                }
+                // Tie the style to the series value "Derived"
+                .foregroundStyle(by: .value("Line", computedDataLabel))
+            }
             
-            // Series 2: Derived
-            ForEach(derivedPoints) { point in
-                LineMark(
-                    x: .value("X", point.xh),
-                    y: .value("Y", point.yv),
-                    series: .value("Line", computedDataLabel)
-                )
-                .interpolationMethod(.linear)
+            if visibility[2] {
+                // Series 3
+                ForEach(secondDerivedPoints) { point in
+                    LineMark(
+                        x: .value("X", point.xh),
+                        y: .value("Y", point.yv),
+                        series: .value("Line", secondDataLabel)
+                    )
+                    .interpolationMethod(.linear)
+                }
+                // Tie the style to the series value "second data"
+                .foregroundStyle(by: .value("Line", secondDataLabel))
             }
-            // Tie the style to the series value "Derived"
-            .foregroundStyle(by: .value("Line", computedDataLabel))
-            
-            // Series 3
-            ForEach(secondDerivedPoints) { point in
-                LineMark(
-                    x: .value("X", point.xh),
-                    y: .value("Y", point.yv),
-                    series: .value("Line", secondDataLabel)
-                )
-                .interpolationMethod(.linear)
-            }
-            // Tie the style to the series value "second data"
-            .foregroundStyle(by: .value("Line", secondDataLabel))
         }
     }
     var body: some View {
-        plainChart
-        // Provide a mapping so each series gets the gradient you want
-            .chartForegroundStyleScale([
-                "Function": AnyShapeStyle(Gradient(colors: [.green, .blue])),
-                computedDataLabel: AnyShapeStyle(Gradient(colors: [.pink, .purple])),
-                secondDataLabel: AnyShapeStyle(Gradient(colors: [.orange, .yellow]))
-            ])
-        // Now the legend has two categorical series to show
-            .chartLegend(position: .bottom, alignment: .center, spacing: 8)
-        
-            .chartXScale(domain: xDomain)
-            .chartYScale(domain: yDomain)
-            .chartPlotStyle { plotArea in
-                plotArea
-                    .background {
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 30).fill(Helpers.shared.gradient)
+        VStack(alignment: .center) {
+            plainChart
+            // Provide a mapping so each series gets the gradient you want
+                .chartForegroundStyleScale([
+                    "Function": AnyShapeStyle(Gradient(colors: [.green, .blue])),
+                    computedDataLabel: AnyShapeStyle(Gradient(colors: [.pink, .purple])),
+                    secondDataLabel: AnyShapeStyle(Gradient(colors: [.orange, .yellow]))
+                ])
+            // Now the legend has two categorical series to show
+                .chartLegend(position: .bottom, alignment: .center, spacing: 8) {
+                    HStack {
+                        HStack {
+                            Label("Function", systemImage: "circle.fill")
+                            Toggle(isOn: $visibility[0]) {
+                                
+                            }
+                            .foregroundStyle(Gradient(colors: [.green, .blue]))
+                        }
+                        HStack {
+                            Label(computedDataLabel, systemImage: "circle.fill")
+                                .foregroundStyle(Gradient(colors: [.orange, .yellow]))
+                                
+                            }
+                        }
+                        HStack {
+                            Label(secondDataLabel, systemImage: "circle.fill")
+                                .foregroundStyle(Gradient(colors: [.pink, .purple]))
+                            Toggle(isOn: $visibility[0]) {
+                                
+                            }
                         }
                     }
-                    .contentShape(Rectangle())
-                    .clipped()
-                    .shadow(color: .black.opacity(0.05), radius: 6, x: 0, y: 2)
-            }
-            .chartXAxis {
-                Helpers.shared.axisMarks(for: invertedScale(from: graphScale), position: .bottom)
-            }
-            .chartYAxis {
-                Helpers.shared.axisMarks(for: invertedScale(from: graphScale), position: .leading)
-            }
-            .frame(height: 340)
-            .padding(.horizontal, 8)
-            .gesture(dragGesture)
-            .gesture(magnificationGesture)
-            .task {
-                let half = invertedScale(from: graphScale)
-                xDomain = (-half)...(half)
-                yDomain = (-half)...(half)
-                pinchBaseXDomain = xDomain
-                pinchBaseYDomain = yDomain
-            }
+                }
+            
+                .chartXScale(domain: xDomain)
+                .chartYScale(domain: yDomain)
+                .chartPlotStyle { plotArea in
+                    plotArea
+                        .background {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 30).fill(Helpers.shared.gradient)
+                            }
+                        }
+                        .contentShape(Rectangle())
+                        .clipped()
+                        .shadow(color: .black.opacity(0.05), radius: 6, x: 0, y: 2)
+                }
+                .chartXAxis {
+                    Helpers.shared.axisMarks(for: invertedScale(from: graphScale), position: .bottom)
+                }
+                .chartYAxis {
+                    Helpers.shared.axisMarks(for: invertedScale(from: graphScale), position: .leading)
+                }
+                .frame(height: 340)
+                .padding(.horizontal, 8)
+                .gesture(dragGesture)
+                .gesture(magnificationGesture)
+                .task {
+                    let half = invertedScale(from: graphScale)
+                    xDomain = (-half)...(half)
+                    yDomain = (-half)...(half)
+                    pinchBaseXDomain = xDomain
+                    pinchBaseYDomain = yDomain
+                }
+            
 
+        }
     }
     
     private var dragGesture: some Gesture {
