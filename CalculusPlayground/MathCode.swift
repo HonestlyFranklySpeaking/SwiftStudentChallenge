@@ -31,9 +31,9 @@ class Function: Identifiable, Hashable {
     }
     
     static let identity: Function = .init(transform: { $0 })
-    static let sine: Function = .init(transform: { 5 * sin($0 / 2) })
+    static let sine: Function = .init(transform: { sin($0) })
     static let square: Function = .init(transform: { $0 * $0 })
-    static let naturalLog: Function = .init(transform: { 4 * log($0) })
+    static let naturalLog: Function = .init(transform: { log($0) })
     static let inverse: Function = .init(transform: { 1 / $0 })
     static let exp: Function = .init(transform: { pow(2.71828, $0) })
     

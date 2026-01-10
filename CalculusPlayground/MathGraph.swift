@@ -12,12 +12,14 @@ struct MathGraph: View {
     @State private var graphScale: Double = 30
     
     var computedDataLabel: String
+    var secondDataLabel: String = ""
     
     @Binding var xDomain: ClosedRange<Double>
     @State private var yDomain: ClosedRange<Double> = -30...30
     
-    @Binding var inputPoints: [GraphPoint]
-    @Binding var derivedPoints: [GraphPoint]
+    @State var inputPoints: [GraphPoint]
+    @State var derivedPoints: [GraphPoint]
+    @State var secondDerivedPoints: [GraphPoint] = []
     
     @State private var pinchScale: CGFloat = 1.0
     @State private var pinchBaseXDomain: ClosedRange<Double> = -30...30
@@ -29,8 +31,7 @@ struct MathGraph: View {
         let clamped = max(5, min(100, sliderValue))
         return 105 - clamped
     }
-    
-    var body: some View {
+    var plainChart: some View {
         Chart {
             // Axes
             RuleMark(x: .value("Origin X", 0))
@@ -63,45 +64,62 @@ struct MathGraph: View {
             }
             // Tie the style to the series value "Derived"
             .foregroundStyle(by: .value("Line", computedDataLabel))
+            
+            // Series 3
+            ForEach(secondDerivedPoints) { point in
+                LineMark(
+                    x: .value("X", point.xh),
+                    y: .value("Y", point.yv),
+                    series: .value("Line", secondDataLabel)
+                )
+                .interpolationMethod(.linear)
+            }
+            // Tie the style to the series value "second data"
+            .foregroundStyle(by: .value("Line", secondDataLabel))
         }
+    }
+    var body: some View {
+        plainChart
         // Provide a mapping so each series gets the gradient you want
-        .chartForegroundStyleScale([
-            "Function": AnyShapeStyle(Gradient(colors: [.green, .blue])),
-            computedDataLabel: AnyShapeStyle(Gradient(colors: [.pink, .purple]))
-        ])
+            .chartForegroundStyleScale([
+                "Function": AnyShapeStyle(Gradient(colors: [.green, .blue])),
+                computedDataLabel: AnyShapeStyle(Gradient(colors: [.pink, .purple])),
+                secondDataLabel: AnyShapeStyle(Gradient(colors: [.orange, .yellow]))
+            ])
         // Now the legend has two categorical series to show
-        .chartLegend(position: .bottom, alignment: .leading, spacing: 8)
+            .chartLegend(position: .bottom, alignment: .center, spacing: 8)
         
-        .chartXScale(domain: xDomain)
-        .chartYScale(domain: yDomain)
-        .chartPlotStyle { plotArea in
-            plotArea
-                .background {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 30).fill(Helpers.shared.gradient)
+            .chartXScale(domain: xDomain)
+            .chartYScale(domain: yDomain)
+            .chartPlotStyle { plotArea in
+                plotArea
+                    .background {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 30).fill(Helpers.shared.gradient)
+                        }
                     }
-                }
-                .contentShape(Rectangle())
-                .clipped()
-                .shadow(color: .black.opacity(0.05), radius: 6, x: 0, y: 2)
-        }
-        .chartXAxis {
-            Helpers.shared.axisMarks(for: invertedScale(from: graphScale), position: .bottom)
-        }
-        .chartYAxis {
-            Helpers.shared.axisMarks(for: invertedScale(from: graphScale), position: .leading)
-        }
-        .frame(height: 340)
-        .padding(.horizontal, 8)
-        .gesture(dragGesture)
-        .gesture(magnificationGesture)
-        .task {
-            let half = invertedScale(from: graphScale)
-            xDomain = (-half)...(half)
-            yDomain = (-half)...(half)
-            pinchBaseXDomain = xDomain
-            pinchBaseYDomain = yDomain
-        }
+                    .contentShape(Rectangle())
+                    .clipped()
+                    .shadow(color: .black.opacity(0.05), radius: 6, x: 0, y: 2)
+            }
+            .chartXAxis {
+                Helpers.shared.axisMarks(for: invertedScale(from: graphScale), position: .bottom)
+            }
+            .chartYAxis {
+                Helpers.shared.axisMarks(for: invertedScale(from: graphScale), position: .leading)
+            }
+            .frame(height: 340)
+            .padding(.horizontal, 8)
+            .gesture(dragGesture)
+            .gesture(magnificationGesture)
+            .task {
+                let half = invertedScale(from: graphScale)
+                xDomain = (-half)...(half)
+                yDomain = (-half)...(half)
+                pinchBaseXDomain = xDomain
+                pinchBaseYDomain = yDomain
+            }
+
     }
     
     private var dragGesture: some Gesture {

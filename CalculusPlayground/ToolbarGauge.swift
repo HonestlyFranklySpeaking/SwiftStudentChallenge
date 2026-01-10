@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-private struct GaugeDemoView: View {
+struct GaugeDemoView: View {
     @State private var currentValue: Double = 125.0
     
     let minValue: Double = 0.0

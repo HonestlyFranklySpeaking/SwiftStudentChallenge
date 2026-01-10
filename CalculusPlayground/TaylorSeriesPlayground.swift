@@ -38,7 +38,7 @@ struct TaylorSeriesPlayground: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 12) {
-                MathGraph(computedDataLabel: "Taylor Series", xDomain: $xDomain, inputPoints: $inputPoints, derivedPoints: $taylorExpansionPoints)
+                MathGraph(computedDataLabel: "Taylor Series", xDomain: $xDomain, inputPoints: inputPoints, derivedPoints: taylorExpansionPoints)
                 
                 Spacer()
                 
@@ -180,7 +180,7 @@ struct TaylorSeriesPlayground: View {
                     }
                 }
                 
-                ToolbarSpacer()
+              ToolbarSpacer()
                 
                 ToolbarItem {
                     Menu {
@@ -355,6 +355,6 @@ struct TaylorSeriesPlayground: View {
 
 
 #Preview {
-    TangentLinePlayground()
+    TaylorSeriesPlayground()
 }
 

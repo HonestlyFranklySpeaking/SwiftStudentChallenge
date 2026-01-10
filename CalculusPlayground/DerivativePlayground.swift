@@ -14,7 +14,7 @@ struct DerivativePlayground: View {
     @State var inputPoints: [GraphPoint] = []
     
     @State var derivativePoints: [GraphPoint] = []
-    
+    @State var secondDerivativePoints: [GraphPoint] = []
     @State var xDomain: ClosedRange<Double> = -30...30
     
     
@@ -24,7 +24,7 @@ struct DerivativePlayground: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 12) {
-                MathGraph(computedDataLabel: "Derivative", xDomain: $xDomain, inputPoints: $inputPoints, derivedPoints: $derivativePoints)
+                MathGraph(computedDataLabel: "Derivative", secondDataLabel: "Second Derivative", xDomain: $xDomain, inputPoints: inputPoints, derivedPoints: derivativePoints, secondDerivedPoints: secondDerivativePoints)
                 
                 
                 Spacer()
@@ -38,6 +38,7 @@ struct DerivativePlayground: View {
                 
                 do {
                     derivativePoints = try await mapDerivative(for: inputPoints)
+                    secondDerivativePoints = try await mapDerivative(for: derivativePoints)
                 } catch {
                     print(error.localizedDescription)
                 }
@@ -65,6 +66,7 @@ struct DerivativePlayground: View {
                         
                         do {
                             derivativePoints = try await mapDerivative(for: inputPoints)
+                            secondDerivativePoints = try await mapDerivative(for: derivativePoints)
                         } catch {
                             print(error.localizedDescription)
                         }
