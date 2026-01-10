@@ -17,9 +17,9 @@ struct MathGraph: View {
     @Binding var xDomain: ClosedRange<Double>
     @State private var yDomain: ClosedRange<Double> = -30...30
     
-    @State var inputPoints: [GraphPoint]
-    @State var derivedPoints: [GraphPoint]
-    @State var secondDerivedPoints: [GraphPoint] = []
+    var inputPoints: [GraphPoint]
+    var derivedPoints: [GraphPoint]
+    var secondDerivedPoints: [GraphPoint] = []
     
     @State private var pinchScale: CGFloat = 1.0
     @State private var pinchBaseXDomain: ClosedRange<Double> = -30...30
