@@ -32,6 +32,23 @@ struct MathGraph: View {
     
     @State private var lastDragTranslation: CGSize = .zero
     
+    // Master palette of styles for all known labels using a concrete ShapeStyle (LinearGradient)
+    private var colorKey: [String: LinearGradient] {
+        [
+            "Function": LinearGradient(colors: [.green, .blue], startPoint: .leading, endPoint: .trailing),
+            "Derivative": LinearGradient(colors: [.pink, .purple], startPoint: .leading, endPoint: .trailing),
+            "Second Derivative": LinearGradient(colors: [.orange, .yellow], startPoint: .leading, endPoint: .trailing),
+            "Tangent Line": LinearGradient(colors: [.mint, .teal], startPoint: .leading, endPoint: .trailing),
+            "Taylor Series": LinearGradient(colors: [.brown, .indigo], startPoint: .leading, endPoint: .trailing)
+        ]
+    }
+    
+    // Filter colorKey down to only the labels that are currently plotted.
+    private var currentMappings: [String: LinearGradient] {
+        let activeLabels = Set(serieses.map { $0.label })
+        return colorKey.filter { activeLabels.contains($0.key) }
+    }
+    
     private func invertedScale(from sliderValue: Double) -> Double {
         let clamped = max(5, min(100, sliderValue))
         return 105 - clamped
@@ -39,62 +56,34 @@ struct MathGraph: View {
     
     var body: some View {
         VStack {
-            Chart {
-                // Axes
-                RuleMark(x: .value("Origin X", 0))
-                    .foregroundStyle(.gray.opacity(0.6))
-                    .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [6, 6]))
-                RuleMark(y: .value("Origin Y", 0))
-                    .foregroundStyle(.gray.opacity(0.6))
-                    .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [6, 6]))
-                
-                
-                ForEach(serieses) { series in
-                    ForEach(series.points) { point in
-                        LineMark(
-                            x: .value("X", point.xh),
-                            y: .value("Y", point.yv),
-                            series: .value("Line", series.label)
-                        )
-                        .interpolationMethod(.linear)
-                    }
-                    .foregroundStyle(by: .value("Line", series.label))
-                }
-            }
-            .chartForegroundStyleScale([
-                "Function": AnyShapeStyle(Gradient(colors: [.green, .blue])),
-                "Derivative": AnyShapeStyle(Gradient(colors: [.pink, .purple])),
-                "Second Derivative": AnyShapeStyle(Gradient(colors: [.orange, .yellow])),
-                "Tangent Line": AnyShapeStyle(Gradient(colors: [.mint, .teal])),
-                "Taylor Series": AnyShapeStyle(Gradient(colors: [.brown, .indigo]))
-            ])
-            .chartLegend(position: .bottom, alignment: .center, spacing: 8)
-            .chartXScale(domain: xDomain)
-            .chartYScale(domain: yDomain)
-            .chartPlotStyle { plotArea in
-                plotArea
-                    .background {
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 30).fill(Helpers.shared.gradient)
+            chartView
+                .chartForegroundStyleScale(mapping: { label in
+                    currentMappings[label] ?? LinearGradient(colors: [.white, .white], startPoint: .leading, endPoint: .trailing)
+                })
+                .chartLegend(position: .bottom, alignment: .center, spacing: 8)
+                .chartXScale(domain: xDomain)
+                .chartYScale(domain: yDomain)
+                .chartPlotStyle { plotArea in
+                    plotArea
+                        .background {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 30).fill(Helpers.shared.gradient)
+                            }
                         }
-                    }
-                    .contentShape(Rectangle())
-                    .clipped()
-                    .shadow(color: .black.opacity(0.05), radius: 6, x: 0, y: 2)
-            }
-            .chartXAxis {
-                Helpers.shared.axisMarks(for: invertedScale(from: graphScale), position: .bottom)
-            }
-            .chartYAxis {
-                Helpers.shared.axisMarks(for: invertedScale(from: graphScale), position: .leading)
-            }
-            .frame(height: 340)
-            .padding(.horizontal, 8)
-            .gesture(dragGesture)
-            .gesture(magnificationGesture)
-            
-            
-            
+                        .contentShape(Rectangle())
+                        .clipped()
+                        .shadow(color: .black.opacity(0.05), radius: 6, x: 0, y: 2)
+                }
+                .chartXAxis {
+                    Helpers.shared.axisMarks(for: invertedScale(from: graphScale), position: .bottom)
+                }
+                .chartYAxis {
+                    Helpers.shared.axisMarks(for: invertedScale(from: graphScale), position: .leading)
+                }
+                .frame(height: 340)
+                .padding(.horizontal, 8)
+                .gesture(dragGesture)
+                .gesture(magnificationGesture)
         }
         .task {
             let half = invertedScale(from: graphScale)
@@ -103,8 +92,32 @@ struct MathGraph: View {
             pinchBaseXDomain = xDomain
             pinchBaseYDomain = yDomain
         }
-        
-        
+    }
+    
+    // Extracted chart content to reduce type-checking load
+    private var chartView: some View {
+        Chart {
+            // Axes
+            RuleMark(x: .value("Origin X", 0.0))
+                .foregroundStyle(Color.gray.opacity(0.6))
+                .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [6, 6]))
+            RuleMark(y: .value("Origin Y", 0.0))
+                .foregroundStyle(Color.gray.opacity(0.6))
+                .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [6, 6]))
+            
+            // Series lines
+            ForEach(serieses) { series in
+                ForEach(series.points) { point in
+                    LineMark(
+                        x: .value("X", point.xh),
+                        y: .value("Y", point.yv),
+                        series: .value("Line", series.label)
+                    )
+                    .interpolationMethod(.linear)
+                }
+                .foregroundStyle(by: .value("Line", series.label))
+            }
+        }
     }
     
     private var dragGesture: some Gesture {
@@ -170,4 +183,3 @@ struct MathGraph: View {
             }
     }
 }
-
