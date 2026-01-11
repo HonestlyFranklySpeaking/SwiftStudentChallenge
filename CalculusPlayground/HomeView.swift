@@ -30,11 +30,6 @@ struct HomeView: View {
                 Section("Abstract") {
                     
                 }
-                Section("Debug") {
-                    NavigationLink(destination: GaugeDemoView()) {
-                        Text("Toolbar gague test")
-                    }
-                }
             }
             .navigationTitle("Math Playgrounds")
         }

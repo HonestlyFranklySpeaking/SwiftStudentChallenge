@@ -12,7 +12,7 @@ struct TangentLinePlayground: View {
     @State var function: Function = Function.naturalLog
     @State var inputPoints: [GraphPoint] = []
     
-    @State var taylorExpansionPoints: [GraphPoint] = [.init(xh: -4, yv: 19), .init(xh: 1, yv: -3)]
+    @State var tangentLine: [GraphPoint] = [.init(xh: -4, yv: 19), .init(xh: 1, yv: -3)]
     
     @State var xDomain: ClosedRange<Double> = -30...30
     
@@ -32,7 +32,10 @@ struct TangentLinePlayground: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 12) {
-                MathGraph(computedDataLabel: "Tangent", xDomain: $xDomain, inputPoints: inputPoints, derivedPoints: taylorExpansionPoints)
+                MathGraph(xDomain: $xDomain, serieses: [
+                    Series(points: inputPoints, label: "Function"),
+                    Series(points: tangentLine, label: "Tangent Line")
+                ])
                 
                 Spacer()
                 
@@ -55,13 +58,13 @@ struct TangentLinePlayground: View {
                             do {
                                 let display = try await Helpers.shared.computeTaylorData(functionID: function.id, degree: 1, center: center, domain: xDomain, inputs: inputPoints)
                                 guard requestID == currentRequestID else { return }
-                                taylorExpansionPoints = display.points
+                                tangentLine = display.points
                                 displayedCoefficients = display.coefficients
                                 displayedCenter = display.centerX
                                 debug = ""
                             } catch {
                                 guard requestID == currentRequestID else { return }
-                                taylorExpansionPoints = []
+                                tangentLine = []
                                 displayedCoefficients = []
                                 displayedCenter = nil
                                 debug = error.localizedDescription
@@ -80,13 +83,13 @@ struct TangentLinePlayground: View {
                             do {
                                 let display = try await Helpers.shared.computeTaylorData(functionID: function.id, degree: 1, center: center, domain: xDomain, inputs: inputPoints)
                                 guard requestID == currentRequestID else { return }
-                                taylorExpansionPoints = display.points
+                                tangentLine = display.points
                                 displayedCoefficients = display.coefficients
                                 displayedCenter = display.centerX
                                 debug = ""
                             } catch {
                                 guard requestID == currentRequestID else { return }
-                                taylorExpansionPoints = []
+                                tangentLine = []
                                 displayedCoefficients = []
                                 displayedCenter = nil
                                 debug = error.localizedDescription
@@ -107,7 +110,7 @@ struct TangentLinePlayground: View {
                 do {
                     let display = try await Helpers.shared.computeTaylorData(functionID: function.id, degree: 1, center: center, domain: xDomain, inputs: inputPoints)
                     if requestID == currentRequestID {
-                        taylorExpansionPoints = display.points
+                        tangentLine = display.points
                         print("\n \n DEBUG!!!!!!!!!!!!!! taylor expansion points generated \n \n ")
                         displayedCoefficients = display.coefficients
                         displayedCenter = display.centerX
@@ -115,7 +118,7 @@ struct TangentLinePlayground: View {
                     }
                 } catch {
                     if requestID == currentRequestID {
-                        taylorExpansionPoints = []
+                        tangentLine = []
                         displayedCoefficients = []
                         displayedCenter = nil
                         debug = error.localizedDescription
@@ -148,13 +151,13 @@ struct TangentLinePlayground: View {
                             let display = try await Helpers.shared.computeTaylorData(functionID: function.id, degree: 1, center: center, domain: xDomain, inputs: inputPoints)
                             
                             guard requestID == currentRequestID else { return }
-                            taylorExpansionPoints = display.points
+                            tangentLine = display.points
                             displayedCoefficients = display.coefficients
                             displayedCenter = display.centerX
                             debug = ""
                         } catch {
                             guard requestID == currentRequestID else { return }
-                            taylorExpansionPoints = []
+                            tangentLine = []
                             displayedCoefficients = []
                             displayedCenter = nil
                             debug = error.localizedDescription

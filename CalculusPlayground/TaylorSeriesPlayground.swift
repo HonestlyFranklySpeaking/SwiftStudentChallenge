@@ -38,7 +38,10 @@ struct TaylorSeriesPlayground: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 12) {
-                MathGraph(computedDataLabel: "Taylor Series", xDomain: $xDomain, inputPoints: inputPoints, derivedPoints: taylorExpansionPoints)
+                MathGraph(xDomain: $xDomain, serieses: [
+                    Series(points: inputPoints, label: "Function"),
+                    Series(points: taylorExpansionPoints, label: "Taylor Series")
+                ])
                 
                 Spacer()
                 
