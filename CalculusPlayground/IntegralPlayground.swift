@@ -32,10 +32,10 @@ struct IntegralPlayground: View {
                 
                 Spacer()
                 Text("Start")
-                Slider(value: $start, in: xDomain)
+                Slider(value: $start, in: xDomainConstant)
                 Text(start.description)
                 Text("End")
-                Slider(value: $end, in: xDomain)
+                Slider(value: $end, in: xDomainConstant)
                 Text(end.description)
                 Toggle("Left Hand Riemann Sum", isOn: $isLeft)
                 Text(debug)
@@ -81,8 +81,7 @@ struct IntegralPlayground: View {
     }
     func generateData() async {
         let f = function
-        let range: ClosedRange<Double> = -30.0...30.0
-        
+        let range: ClosedRange<Double> = xDomainConstant
         let step: Double = Helpers.shared.increment
         let points: [GraphPoint] = await Task.detached(priority: .utility) {
             await makeInputs(for: f, range: range, step: step)
@@ -115,6 +114,7 @@ struct IntegralPlayground: View {
         guard !riemannSum.isNaN else {
             throw integralError.error
         }
+        if end > start { riemannSum *= -1 }
         print(riemannSum.description)
         return riemannSum
     }
