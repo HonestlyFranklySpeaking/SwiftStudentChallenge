@@ -55,9 +55,7 @@ struct ToolbarGauge: GaugeStyle {
                 .stroke(Color(.systemGray5), lineWidth: strokeWidth)
             Circle()
                 .trim(from: 0, to: configuration.value)
-                .stroke(
-                    configuration.label != nil ? .red : .primary,
-                    style: StrokeStyle(lineWidth: strokeWidth, lineCap: .round)
+                .stroke(.red, style: StrokeStyle(lineWidth: strokeWidth, lineCap: .round)
                 )
                 .rotationEffect(.degrees(-90))
         }

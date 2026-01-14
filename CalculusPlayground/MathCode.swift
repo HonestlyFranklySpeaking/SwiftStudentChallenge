@@ -22,7 +22,7 @@ class GraphPoint: Identifiable {
 }
 ///Represents a mathematical function
 class Function: Identifiable, Hashable {
-    var id: UUID = UUID()
+    nonisolated let id: UUID = UUID()
     
     nonisolated let transform: (Double) -> Double
     
@@ -47,7 +47,7 @@ class Function: Identifiable, Hashable {
     static func == (lhs: Function, rhs: Function) -> Bool {
         lhs.id == rhs.id
     }
-    func hash(into hasher: inout Hasher) { hasher.combine(id) }
+    nonisolated func hash(into hasher: inout Hasher) { hasher.combine(id) }
 }
 
 enum computeError: Error, LocalizedError {
@@ -237,7 +237,7 @@ func generateTaylorSeriesDetached(for inputs: [GraphPoint], degree: Int, center:
 }
 
 // Caching data
-struct PlotKey: Hashable, Equatable {
+nonisolated struct PlotKey: Hashable, Equatable {
     let functionID: UUID
     let degree: Int
     let centerBucket: Double
@@ -253,6 +253,7 @@ struct PlotKey: Hashable, Equatable {
         lhs.xUpperBucket == rhs.xUpperBucket &&
         lhs.refined == rhs.refined
     }
+
 }
 
 actor TaylorSeriesCache {
