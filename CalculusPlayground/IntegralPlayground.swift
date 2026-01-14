@@ -14,6 +14,7 @@ struct IntegralPlayground: View {
     @State var function: Function = Function.sine
     @State var inputPoints: [GraphPoint] = []
     @State var xDomain: ClosedRange<Double> = -30...30
+    let xDomainConstant: ClosedRange<Double> = -30...30
     
     @State var start: Double = 0
     @State var end: Double = 0
@@ -44,39 +45,34 @@ struct IntegralPlayground: View {
             .padding()
             .task {
                 await update()
-                print("Bucket test")
-                print(bucket(5.0, step: 0.8))
+
             }
             .toolbar { menu }
         }
         .onChange(of: start) {_, _ in
             Task {
-                await generateData()
                 await update()
             }
 
         }
         .onChange(of: end) {
             Task {
-                await generateData()
                 await update()
             }
         }
         .onChange(of: isLeft) {
             Task {
-                await generateData()
                 await update()
             }        }
         .onChange(of: function) {
             Task {
-                await generateData()
                 await update()
             }        }
     }
-        
+    ///To be done after a change, generates new data and takes definite integral
     func update() async {
         await generateData()
-        
+        print("generate data over, entered intagral")
         do {
             integral = try await generateIntegral(of: inputPoints, from: start, to: end, leftHand: isLeft)
         } catch {
@@ -86,6 +82,7 @@ struct IntegralPlayground: View {
     func generateData() async {
         let f = function
         let range: ClosedRange<Double> = -30.0...30.0
+        
         let step: Double = Helpers.shared.increment
         let points: [GraphPoint] = await Task.detached(priority: .utility) {
             await makeInputs(for: f, range: range, step: step)
@@ -94,9 +91,14 @@ struct IntegralPlayground: View {
         print("\n Generated \(points.count) points for function \(f.id.uuidString.prefix(6)) \n")
     }
     func generateIntegral(of: Array<GraphPoint>, from: Double, to: Double, leftHand: Bool) async throws -> Double {
-        let h = of[1].xh - of[0].xh
-        let start = Int(bucket(from, step: h) / h)
-        let end = Int(bucket(to, step: h) / h)
+        print("integrate started")
+        let h = Helpers.shared.increment
+        //Offset: originally start and end are bounded from (-(30/0.08) to +~400) but wed like it to be from 0 to ~80. Offset does this.
+        print("xDomainlower: \(xDomainConstant.lowerBound)")
+        let offset = Int(bucket(xDomainConstant.lowerBound, step: h) / h)
+        print("offset: \(offset)")
+        let start = Int(bucket(from, step: h) / h) - offset
+        let end = Int(bucket(to, step: h) / h) - offset
         print("h, from, to, start, end")
         print(h)
         print(from.description)
