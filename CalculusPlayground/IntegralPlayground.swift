@@ -9,8 +9,13 @@ import SwiftUI
 import Charts
 
 struct IntegralPlayground: View {
+    enum IntegralStatus {
+        case pending
+        case done
+    }
     
-
+    @State var integralState: IntegralStatus = .done
+    let increment: Double = 0.0005
     @State var function: Function = Function.sine
     @State var inputPoints: [GraphPoint] = []
     @State var xDomain: ClosedRange<Double> = -30...30
@@ -29,7 +34,6 @@ struct IntegralPlayground: View {
                 MathGraph(xDomain: $xDomain, serieses: [
                     Series(points: inputPoints, label: "Function")
                 ])
-                
                 Spacer()
                 Text("Start")
                 Slider(value: $start, in: xDomainConstant)
@@ -39,13 +43,13 @@ struct IntegralPlayground: View {
                 Text(end.description)
                 Toggle("Left Hand Riemann Sum", isOn: $isLeft)
                 Text(debug)
-                Text(integral.description)
+                integralEquation
             }
             .navigationTitle("Definite Integrals")
             .padding()
             .task {
                 await update()
-
+                
             }
             .toolbar { menu }
         }
@@ -53,7 +57,7 @@ struct IntegralPlayground: View {
             Task {
                 await update()
             }
-
+            
         }
         .onChange(of: end) {
             Task {
@@ -68,9 +72,11 @@ struct IntegralPlayground: View {
             Task {
                 await update()
             }        }
+        
     }
     ///To be done after a change, generates new data and takes definite integral
     func update() async {
+        integralState = .pending
         await generateData()
         print("generate data over, entered intagral")
         do {
@@ -78,11 +84,12 @@ struct IntegralPlayground: View {
         } catch {
             print(error.localizedDescription)
         }
+        integralState = .done
     }
     func generateData() async {
         let f = function
         let range: ClosedRange<Double> = xDomainConstant
-        let step: Double = Helpers.shared.increment
+        let step: Double = increment
         let points: [GraphPoint] = await Task.detached(priority: .utility) {
             await makeInputs(for: f, range: range, step: step)
         }.value
@@ -91,7 +98,7 @@ struct IntegralPlayground: View {
     }
     func generateIntegral(of: Array<GraphPoint>, from: Double, to: Double, leftHand: Bool) async throws -> Double {
         print("integrate started")
-        let h = Helpers.shared.increment
+        let h = of[1].xh - of[0].xh
         //Offset: originally start and end are bounded from (-(30/0.08) to +~400) but wed like it to be from 0 to ~80. Offset does this.
         print("xDomainlower: \(xDomainConstant.lowerBound)")
         let offset = Int(bucket(xDomainConstant.lowerBound, step: h) / h)
@@ -136,7 +143,25 @@ struct IntegralPlayground: View {
                 .background(Circle().fill(.purple))
         }
     }
-    
+    var integralEquation: some View {
+        HStack {
+            HStack(spacing: 0.5) {
+                Text("∫")
+                    .font(.largeTitle)
+                VStack {
+                    Text(String(format: "%.2f", bucket(end, step: 0.01)))
+                        .font(.caption)
+                        .padding(0.7)
+                    Text(String(format: "%.2f", bucket(start, step: 0.01)))
+                        .font(.caption)
+                        .padding(0.5)
+                }
+            }
+                
+                function.visualizationClosure()
+            Text("dx = \(String(format: "%.2f", bucket(integral, step: 0.01)))")
+        }
+    }
 }
 
 struct integralError: Error {

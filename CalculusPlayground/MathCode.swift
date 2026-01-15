@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SwiftUI
 
 ///Represents a point on a graph, with xh and yv as x and y
 class GraphPoint: Identifiable {
@@ -22,26 +23,51 @@ class GraphPoint: Identifiable {
 }
 ///Represents a mathematical function
 class Function: Identifiable, Hashable {
-    nonisolated let id: UUID = UUID()
-    
-    nonisolated let transform: (Double) -> Double
-    
-    init(transform: @escaping (Double) -> Double) {
-        self.transform = transform
+    //To be expanded upon
+    struct visualization: View {
+        @State var text: String = ""
+        var body: some View {
+            Text(text)
+        }
     }
     
-    static let identity: Function = .init(transform: { $0 })
-    static let sine: Function = .init(transform: { sin($0) })
-    static let square: Function = .init(transform: { $0 * $0 })
-    static let naturalLog: Function = .init(transform: { log($0) })
-    static let inverse: Function = .init(transform: { 1 / $0 })
-    static let exp: Function = .init(transform: { pow(2.71828, $0) })
+    nonisolated let id: UUID = UUID()
+    
+    ///This gives a view that looks like the function, like Text("x") for identity
+    nonisolated let visualizationClosure: () -> Function.visualization
+    nonisolated let transform: (Double) -> Double
+    private static let nilTransform: (() -> Function.visualization) = { Function.visualization() }
+    init(transform: @escaping (Double) -> Double, visualization: (() ->  Function.visualization)? = nil) {
+        self.transform = transform
+        self.visualizationClosure = (visualization ?? Function.nilTransform)
+    }
+    
+    static let identity: Function = .init(transform: { $0 }) {
+        visualization(text: "x")
+    }
+    static let sine: Function = .init(transform: { sin($0) }) {
+        visualization(text: "sin(x)")
+    }
+    static let square: Function = .init(transform: { $0 * $0 }) {
+        visualization(text: "x^2")
+    }
+    static let naturalLog: Function = .init(transform: { log($0) }) {
+        visualization(text: "ln(x)")
+    }
+    static let inverse: Function = .init(transform: { 1 / $0 }) {
+        visualization(text: "1/x")
+    }
+    static let exp: Function = .init(transform: { pow(2.71828, $0) }) {
+        visualization(text: "e^x")
+    }
     
     static let humpy: Function = .init {
         let x = $0 / 1.5
         let a = (x+10)*(x+10)*(x-15)
         let b = (x+30)*(x+3)*(x-10)*(x-30)
         return a * b / 1200000
+    } visualization: {
+        visualization(text: "P(x)")
     }
     
     static func == (lhs: Function, rhs: Function) -> Bool {
