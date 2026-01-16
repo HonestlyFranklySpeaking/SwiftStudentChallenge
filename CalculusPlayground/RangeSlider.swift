@@ -1,4 +1,7 @@
 import SwiftUI
+import RangeSlider
+
+
 
 struct RangeSliderModifier: ViewModifier {
     @Binding var range: ClosedRange<Double>
@@ -75,9 +78,13 @@ extension View {
 
 struct RangeSliderTest: View {
     @State private var priceRange = 20.0...80.0
-    
+    @State var upper: Double = 0.5
+    @State var lower: Double = 0.5
     var body: some View {
         VStack {
+            Text("From Github")
+            Text("$\((priceRange.upperBound - priceRange.lowerBound) * lower + priceRange.lowerBound) - \((priceRange.upperBound - priceRange.lowerBound) * upper + priceRange.lowerBound)")
+            RangeSlider(lowerValue: $lower, upperValue: $upper, step: 0.0001)
             Text("Price: $\(Int(priceRange.lowerBound)) - $\(Int(priceRange.upperBound))")
             
             // Apply the modifier to a simple Capsule to create the slider
