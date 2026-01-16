@@ -7,6 +7,7 @@
 
 import SwiftUI
 import Charts
+import RangeSlider
 
 struct IntegralPlayground: View {
     enum IntegralStatus {
@@ -15,14 +16,14 @@ struct IntegralPlayground: View {
     }
     
     @State var integralState: IntegralStatus = .done
-    let increment: Double = 0.0005
+    let increment: Double = 0.005
     @State var function: Function = Function.sine
     @State var inputPoints: [GraphPoint] = []
     @State var xDomain: ClosedRange<Double> = -30...30
     let xDomainConstant: ClosedRange<Double> = -30...30
     
-    @State var start: Double = 0
-    @State var end: Double = 0
+    @State var start: Double = 0.25
+    @State var end: Double = 0.75
     @State var integral: Double = 0
     @State private var debug: String = ""
     @State var isLeft: Bool = false
@@ -35,12 +36,8 @@ struct IntegralPlayground: View {
                     Series(points: inputPoints, label: "Function")
                 ])
                 Spacer()
-                Text("Start")
-                Slider(value: $start, in: xDomainConstant)
-                Text(start.description)
-                Text("End")
-                Slider(value: $end, in: xDomainConstant)
-                Text(end.description)
+                RangeSlider(lowerValue: $start, upperValue: $end, step: 0.01)
+                Text("\(mapRangeSlider( start, range: xDomainConstant).description) - \(mapRangeSlider( end, range: xDomainConstant).description)")
                 Toggle("Left Hand Riemann Sum", isOn: $isLeft)
                 Text(debug)
                 integralEquation
@@ -80,7 +77,7 @@ struct IntegralPlayground: View {
         await generateData()
         print("generate data over, entered intagral")
         do {
-            integral = try await generateIntegral(of: inputPoints, from: start, to: end, leftHand: isLeft)
+            integral = try await generateIntegral(of: inputPoints, from: mapRangeSlider(start, range: xDomainConstant), to: mapRangeSlider(end, range: xDomainConstant), leftHand: isLeft)
         } catch {
             print(error.localizedDescription)
         }
@@ -121,7 +118,7 @@ struct IntegralPlayground: View {
         guard !riemannSum.isNaN else {
             throw integralError.error
         }
-        if end > start { riemannSum *= -1 }
+        if end < start { riemannSum *= -1 }
         print(riemannSum.description)
         return riemannSum
     }
@@ -149,18 +146,25 @@ struct IntegralPlayground: View {
                 Text("∫")
                     .font(.largeTitle)
                 VStack {
-                    Text(String(format: "%.2f", bucket(end, step: 0.01)))
+                    Text(String(format: "%.2f", bucket(mapRangeSlider(end, range: xDomainConstant), step: 0.01)))
                         .font(.caption)
                         .padding(0.7)
-                    Text(String(format: "%.2f", bucket(start, step: 0.01)))
+                    Text(String(format: "%.2f", bucket(mapRangeSlider(start, range: xDomainConstant), step: 0.01)))
                         .font(.caption)
                         .padding(0.5)
                 }
             }
                 
                 function.visualizationClosure()
-            Text("dx = \(String(format: "%.2f", bucket(integral, step: 0.01)))")
+            if integralState == .done {
+                Text("dx ≈ \((String(format: "%.2f", bucket(integral, step: 0.01))))")
+            } else {
+                Text("...")
+            }
         }
+    }
+    func mapRangeSlider(_ value: Double, range: ClosedRange<Double>) -> Double {
+        return value * (range.upperBound - range.lowerBound) + range.lowerBound
     }
 }
 

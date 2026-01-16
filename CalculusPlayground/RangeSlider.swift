@@ -76,22 +76,23 @@ extension View {
 
 
 
+
 struct RangeSliderTest: View {
     @State private var priceRange = 20.0...80.0
-    @State var upper: Double = 0.5
-    @State var lower: Double = 0.5
+    let slideDomain: ClosedRange<Double> = 0.0 ... 100.0
+    
     var body: some View {
         VStack {
             Text("From Github")
-            Text("$\((priceRange.upperBound - priceRange.lowerBound) * lower + priceRange.lowerBound) - \((priceRange.upperBound - priceRange.lowerBound) * upper + priceRange.lowerBound)")
-            RangeSlider(lowerValue: $lower, upperValue: $upper, step: 0.0001)
+            
+            
             Text("Price: $\(Int(priceRange.lowerBound)) - $\(Int(priceRange.upperBound))")
             
             // Apply the modifier to a simple Capsule to create the slider
             Capsule()
                 .fill(Color.gray)
                 .frame(height: 6)
-                .rangeSlider(range: $priceRange, in: 0...100, step: 5)
+                .rangeSlider(range: $priceRange, in: slideDomain, step: 5)
                 .padding()
         }
     }
