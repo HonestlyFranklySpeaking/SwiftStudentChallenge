@@ -18,8 +18,8 @@ struct HomeView: View {
                     NavigationLink(destination: DerivativePlayground()) {
                         Text("Derivatives")
                     }
-                    NavigationLink(destination: IntegralPlayground()) {
-                        Text("Definite Integrals")
+                    NavigationLink(destination: RiemannSums()) {
+                        Text("Riemann Sums")
                     }
                 }
                 

@@ -8,11 +8,12 @@
 import SwiftUI
 import Charts
 
-struct IntegralPlayground: View {
+struct RiemannSums: View {
     @State var visualInputPoints: [GraphPoint] = []
-    @State var lnIncrement: Double = log10(0.05)
     @State var increment: Double = 0.05
+    
     let visualIncrement: Double = 0.05
+    
     @State var function: Function = Function.sine
     @State var inputPoints: [GraphPoint] = []
     @State var xDomain: ClosedRange<Double> = -30...30
@@ -29,9 +30,8 @@ struct IntegralPlayground: View {
                     Series(points: rectanglePoints, label: "Riemann Sum", plottype: .area)
                 ])
                 Spacer()
-                //                RangeSlider(lowerValue: $start, upperValue: $end, step: 0.01)
-                Text("Zoom in to see the little rectangles!")
-                Slider(value: $increment, in: -4.0 ... 1 as ClosedRange<Double>, step: 0.1) {
+                
+                Slider(value: $increment, in: 0.05...1 as ClosedRange<Double>, step: 0.01) {
                     Text("Increment size")
                 }
                 
@@ -47,11 +47,10 @@ struct IntegralPlayground: View {
                 Text(debug)
                 integralEquation
             }
-            .navigationTitle("Definite Integrals")
+            .navigationTitle("Riemann Sums")
             .padding()
             .task {
                 await update()
-                
             }
             .toolbar { menu }
         }
@@ -65,8 +64,7 @@ struct IntegralPlayground: View {
                 await update()
             }
         }
-        .onChange(of: lnIncrement) {
-            increment = pow(10, lnIncrement)
+        .onChange(of: increment) {
             Task {
                 await update()
             }
@@ -75,10 +73,8 @@ struct IntegralPlayground: View {
     }
     ///To be done after a change, generates new data and takes definite integral
     func update() async {
-        let inc = increment
-        let visInc = visualIncrement
-        inputPoints = await generateData(step: inc)
-        visualInputPoints = await generateData(step: visInc)
+        inputPoints = await generateData(step: increment)
+        visualInputPoints = await generateData(step: visualIncrement)
         do {
             (integral, rectanglePoints) = try await generateIntegral(for: inputPoints, range: range)
         } catch {
@@ -136,9 +132,6 @@ struct IntegralPlayground: View {
         }
     }
 }
-
-
-
 
 
 #Preview {

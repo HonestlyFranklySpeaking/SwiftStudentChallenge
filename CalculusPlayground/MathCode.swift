@@ -111,7 +111,7 @@ enum integralError: Error, LocalizedError {
 }
 
 
-func generateIntegral(for inputs: [GraphPoint], range: ClosedRange<Double>) async throws -> (Double, Array<GraphPoint>) {
+func generateIntegral(for inputs: [GraphPoint], range: ClosedRange<Double>) async throws -> (Double, [GraphPoint]) {
     print("\n INTEGRAl: ")
     var filtered = inputs.filter({ $0.xh > range.lowerBound && $0.xh < range.upperBound})
 
@@ -132,8 +132,8 @@ func generateIntegral(for inputs: [GraphPoint], range: ClosedRange<Double>) asyn
     for i in filtered {
         
         sum += (i.yv * h)
-        rectangles.append(GraphPoint(xh: i.xh + h/50, yv: i.yv))
-        rectangles.append(GraphPoint(xh: i.xh + 49 * h/50, yv: i.yv))
+        rectangles.append(GraphPoint(xh: i.xh + h * 1/300, yv: i.yv))
+        rectangles.append(GraphPoint(xh: i.xh + h * 299/300, yv: i.yv))
         
     }
     
