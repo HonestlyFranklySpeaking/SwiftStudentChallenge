@@ -111,7 +111,33 @@ enum integralError: Error, LocalizedError {
 }
 
 
-func generateIntegral(for inputs: [GraphPoint], range: ClosedRange<Double>) async throws -> (Double, [GraphPoint]) {
+func generateIntegral(for inputs: [GraphPoint]) async -> [GraphPoint] {
+    // Ensure we have at least two points to form a trapezoid
+    guard inputs.count >= 2 else { return [] }
+    
+    // The integral graph starts at the first x-coordinate with a value of 0
+    var integralPoints: [GraphPoint] = [GraphPoint(xh: inputs[0].xh, yv: 0)]
+    var area: Double = 0.0
+    
+    // Iterate through the segments to calculate the area of each trapezoid
+    for i in 0..<(inputs.count - 1) {
+        let p1 = inputs[i]
+        let p2 = inputs[i + 1]
+        
+        let dx = Double(p2.xh - p1.xh)
+        let ave = Double(p1.yv + p2.yv) / 2.0
+        
+        area += dx * ave
+        
+        // Append the new coordinate for the integral graph
+        integralPoints.append(GraphPoint(xh: p2.xh, yv: area))
+    }
+    
+    return integralPoints
+}
+
+
+func riemannSum(for inputs: [GraphPoint], range: ClosedRange<Double>) async throws -> (Double, [GraphPoint]) {
     print("\n INTEGRAl: ")
     var filtered = inputs.filter({ $0.xh > range.lowerBound && $0.xh < range.upperBound})
 

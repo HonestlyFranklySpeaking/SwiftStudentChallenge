@@ -47,7 +47,9 @@ struct MathGraph: View {
             "Second Derivative": LinearGradient(colors: [.orange, .yellow], startPoint: .leading, endPoint: .trailing),
             "Tangent Line": LinearGradient(colors: [.mint, .teal], startPoint: .leading, endPoint: .trailing),
             "Taylor Series": LinearGradient(colors: [.brown, .indigo], startPoint: .leading, endPoint: .trailing), 
-            "Riemann Sum": LinearGradient(colors: [.red.opacity(0.6), .orange.opacity(0.6)], startPoint: .trailing, endPoint: .leading)
+            "Riemann Sum": LinearGradient(colors: [.red.opacity(0.6), .orange.opacity(0.6)], startPoint: .trailing, endPoint: .leading),
+            "Integral": LinearGradient(colors: [.pink, .purple], startPoint: .leading, endPoint: .trailing),
+            "Second Integral": LinearGradient(colors: [.orange, .yellow], startPoint: .leading, endPoint: .trailing)
         ]
     }
     
