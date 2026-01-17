@@ -24,51 +24,30 @@ class GraphPoint: Identifiable {
 ///Represents a mathematical function
 class Function: Identifiable, Hashable {
     //To be expanded upon
-    struct visualization: View {
-        @State var text: String = ""
-        var body: some View {
-            Text(text)
-        }
-    }
     
     nonisolated let id: UUID = UUID()
     
     ///This gives a view that looks like the function, like Text("x") for identity
-    nonisolated let visualizationClosure: () -> Function.visualization
+    nonisolated let mathText: String?
     nonisolated let transform: (Double) -> Double
-    private static let nilTransform: (() -> Function.visualization) = { Function.visualization() }
-    init(transform: @escaping (Double) -> Double, visualization: (() ->  Function.visualization)? = nil) {
+    init(transform: @escaping (Double) -> Double, text: String? = nil) {
         self.transform = transform
-        self.visualizationClosure = (visualization ?? Function.nilTransform)
+        self.mathText = text
     }
     
-    static let identity: Function = .init(transform: { $0 }) {
-        visualization(text: "x")
-    }
-    static let sine: Function = .init(transform: { sin($0) }) {
-        visualization(text: "sin(x)")
-    }
-    static let square: Function = .init(transform: { $0 * $0 }) {
-        visualization(text: "x^2")
-    }
-    static let naturalLog: Function = .init(transform: { log($0) }) {
-        visualization(text: "ln(x)")
-    }
-    static let inverse: Function = .init(transform: { 1 / $0 }) {
-        visualization(text: "1/x")
-    }
-    static let exp: Function = .init(transform: { pow(2.71828, $0) }) {
-        visualization(text: "e^x")
-    }
+    static let identity: Function = .init(transform: { $0 }, text: "x")
+    static let sine: Function = .init(transform: { sin($0) }, text: "sin(x)")
+    static let square: Function = .init(transform: { $0 * $0 }, text: "x^2")
+    static let naturalLog: Function = .init(transform: { log($0) }, text: "ln(x)")
+    static let inverse: Function = .init(transform: { 1 / $0 }, text: "1/x")
+    static let exp: Function = .init(transform: { pow(2.71828, $0) }, text: "e^x")
     
-    static let humpy: Function = .init {
+    static let humpy: Function = .init(transform: {
         let x = $0 / 1.5
         let a = (x+10)*(x+10)*(x-15)
         let b = (x+30)*(x+3)*(x-10)*(x-30)
         return a * b / 1200000
-    } visualization: {
-        visualization(text: "P(x)")
-    }
+    }, text: "p(x)")
     
     static func == (lhs: Function, rhs: Function) -> Bool {
         lhs.id == rhs.id
@@ -127,12 +106,41 @@ struct TaylorSeriesResult {
     let centerX: Double
 }
 
+enum integralError: Error, LocalizedError {
+    case invalidSum
+}
+
+
+func generateIntegral(for inputs: [GraphPoint], range: ClosedRange<Double>) async throws -> Double {
+    print("\n INTEGRAl: ")
+    let filtered = inputs.filter({ $0.xh > range.lowerBound && $0.xh < range.upperBound})
+    
+    // prevents index out of range error
+    guard filtered.count > 2 else {
+        return 0
+    }
+    
+    let h = filtered[1].xh - filtered[0].xh
+    print("H: \(h)")
+    
+    var sum = 0.0
+    
+    for i in filtered {
+        
+        sum += (i.yv * h)
+    }
+    
+    guard !sum.isNaN else {
+        throw integralError.invalidSum
+    }
+    
+    print("SUM: \(sum) \n")
+    return sum
+}
 
 
 func mapDerivative(for inputs: [GraphPoint]) async throws -> [GraphPoint] {
     guard !inputs.isEmpty else { throw computeError.insufficientData }
-    
-    let sortedData = inputs.sorted { $0.xh < $1.xh }
     
     var derivatives = [GraphPoint]()
     

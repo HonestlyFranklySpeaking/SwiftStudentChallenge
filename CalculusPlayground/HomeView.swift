@@ -16,7 +16,10 @@ struct HomeView: View {
                         Text("Tangent Lines")
                     }
                     NavigationLink(destination: DerivativePlayground()) {
-                        Text("Derivative")
+                        Text("Derivatives")
+                    }
+                    NavigationLink(destination: IntegralPlayground()) {
+                        Text("Definite Integrals")
                     }
                 }
                 

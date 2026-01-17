@@ -17,8 +17,9 @@ struct RangeSliderModifier: ViewModifier {
                 
                 // The Active Range Highlight
                 Capsule()
-                    .fill(Color.purple)
-                    .frame(width: CGFloat((range.upperBound - range.lowerBound) / (bounds.upperBound - bounds.lowerBound)) * geometry.size.width + 30)
+                    .fill(Color.purple.opacity(0.4))
+                    .glassEffect()
+                    .frame(width: CGFloat((range.upperBound - range.lowerBound) / (bounds.upperBound - bounds.lowerBound)) * geometry.size.width + 30, height: 30)
                     .offset(x: CGFloat((range.lowerBound - bounds.lowerBound) / (bounds.upperBound - bounds.lowerBound)) * geometry.size.width - 15)
                 
                 // Lower Thumb
@@ -47,9 +48,10 @@ private struct Thumb: View {
     var body: some View {
         Circle()
             .fill(Color.white)
+            .glassEffect()
             .shadow(radius: 2)
-            .frame(width: 28, height: 28)
-            .offset(x: currentPosition - 14)
+            .frame(width: 20, height: 20)
+            .offset(x: currentPosition - 10)
             .gesture(
                 DragGesture().onChanged { gesture in
                     let percent = Double(gesture.location.x / width)
@@ -83,12 +85,6 @@ struct RangeSliderTest: View {
     
     var body: some View {
         VStack {
-            Text("From Github")
-            
-            
-            Text("Price: $\(Int(priceRange.lowerBound)) - $\(Int(priceRange.upperBound))")
-            
-            // Apply the modifier to a simple Capsule to create the slider
             Capsule()
                 .fill(Color.gray)
                 .frame(height: 6)
