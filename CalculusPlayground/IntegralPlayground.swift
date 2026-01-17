@@ -14,7 +14,6 @@ struct IntegralPlayground: View {
     @State var function: Function = Function.sine
     @State var inputPoints: [GraphPoint] = []
     @State var xDomain: ClosedRange<Double> = -30...30
-    let xDomainConstant: ClosedRange<Double> = -30...30
     
     @State var range: ClosedRange<Double> = 0...5
     @State var integral: Double = 0
@@ -71,7 +70,7 @@ struct IntegralPlayground: View {
     
     func generateData() async {
         let f = function
-        let range: ClosedRange<Double> = xDomainConstant
+        let range: ClosedRange<Double> = -30...30
         let step: Double = increment
         let points: [GraphPoint] = await Task.detached(priority: .utility) {
             await makeInputs(for: f, range: range, step: step)
@@ -117,9 +116,6 @@ struct IntegralPlayground: View {
             Text("dx ≈ \((String(format: "%.2f", bucket(integral, step: 0.01))))")
             
         }
-    }
-    func mapRangeSlider(_ value: Double, range: ClosedRange<Double>) -> Double {
-        return value * (range.upperBound - range.lowerBound) + range.lowerBound
     }
 }
 
