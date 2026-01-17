@@ -9,8 +9,10 @@ import SwiftUI
 import Charts
 
 struct IntegralPlayground: View {
-    
-    let increment: Double = 0.05
+    @State var visualInputPoints: [GraphPoint] = []
+    @State var lnIncrement: Double = log10(0.05)
+    @State var increment: Double = 0.05
+    let visualIncrement: Double = 0.05
     @State var function: Function = Function.sine
     @State var inputPoints: [GraphPoint] = []
     @State var xDomain: ClosedRange<Double> = -30...30
@@ -23,12 +25,17 @@ struct IntegralPlayground: View {
         NavigationStack {
             VStack(spacing: 12) {
                 MathGraph(xDomain: $xDomain, serieses: [
-                    Series(points: inputPoints, label: "Function"),
+                    Series(points: visualInputPoints, label: "Function"),
                     Series(points: rectanglePoints, label: "Riemann Sum", plottype: .area)
                 ])
                 Spacer()
                 //                RangeSlider(lowerValue: $start, upperValue: $end, step: 0.01)
                 Text("Zoom in to see the little rectangles!")
+                Slider(value: $increment, in: -4.0 ... 1 as ClosedRange<Double>, step: 0.1) {
+                    Text("Increment size")
+                }
+                
+                
                 Capsule()
                     .fill(Color.gray)
                     .frame(height: 6)
@@ -58,11 +65,20 @@ struct IntegralPlayground: View {
                 await update()
             }
         }
+        .onChange(of: lnIncrement) {
+            increment = pow(10, lnIncrement)
+            Task {
+                await update()
+            }
+        }
         
     }
     ///To be done after a change, generates new data and takes definite integral
     func update() async {
-        await generateData()
+        let inc = increment
+        let visInc = visualIncrement
+        inputPoints = await generateData(step: inc)
+        visualInputPoints = await generateData(step: visInc)
         do {
             (integral, rectanglePoints) = try await generateIntegral(for: inputPoints, range: range)
         } catch {
@@ -70,15 +86,15 @@ struct IntegralPlayground: View {
         }
     }
     
-    func generateData() async {
+    func generateData(step: Double) async -> [GraphPoint] {
         let f = function
         let range: ClosedRange<Double> = -30...30
-        let step: Double = increment
         let points: [GraphPoint] = await Task.detached(priority: .utility) {
             await makeInputs(for: f, range: range, step: step)
         }.value
-        inputPoints = points
-        print("\n Generated \(points.count) points for function \(f.id.uuidString.prefix(6)) \n")
+        print("\nGenerated \(points.count) points for function \(f.id.uuidString.prefix(6)) \n")
+        return points
+        
     }
     
     

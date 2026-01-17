@@ -115,7 +115,7 @@ func generateIntegral(for inputs: [GraphPoint], range: ClosedRange<Double>) asyn
     print("\n INTEGRAl: ")
     var filtered = inputs.filter({ $0.xh > range.lowerBound && $0.xh < range.upperBound})
 
-    filtered.popLast()
+    _ = filtered.popLast()
     
     
     // prevents index out of range error
