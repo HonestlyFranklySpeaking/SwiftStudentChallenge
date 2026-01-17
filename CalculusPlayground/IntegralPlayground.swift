@@ -14,7 +14,7 @@ struct IntegralPlayground: View {
     @State var function: Function = Function.sine
     @State var inputPoints: [GraphPoint] = []
     @State var xDomain: ClosedRange<Double> = -30...30
-    
+    @State var rectanglePoints = [] as [GraphPoint]
     @State var range: ClosedRange<Double> = 0...5
     @State var integral: Double = 0
     @State private var debug: String = ""
@@ -23,10 +23,12 @@ struct IntegralPlayground: View {
         NavigationStack {
             VStack(spacing: 12) {
                 MathGraph(xDomain: $xDomain, serieses: [
-                    Series(points: inputPoints, label: "Function")
+                    Series(points: inputPoints, label: "Function"),
+                    Series(points: rectanglePoints, label: "Riemann Sum", plottype: .area)
                 ])
                 Spacer()
                 //                RangeSlider(lowerValue: $start, upperValue: $end, step: 0.01)
+                Text("Zoom in to see the little rectangles!")
                 Capsule()
                     .fill(Color.gray)
                     .frame(height: 6)
@@ -62,7 +64,7 @@ struct IntegralPlayground: View {
     func update() async {
         await generateData()
         do {
-            integral = try await generateIntegral(for: inputPoints, range: range)
+            (integral, rectanglePoints) = try await generateIntegral(for: inputPoints, range: range)
         } catch {
             print(error.localizedDescription)
         }
