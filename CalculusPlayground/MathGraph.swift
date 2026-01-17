@@ -9,11 +9,19 @@ import SwiftUI
 import Charts
 
 struct Series: Identifiable {
+    enum PlotType {
+        case area
+        case line
+        case point
+    }
+    
     var id = UUID()
     
     var points: [GraphPoint]
     
     var label: String
+    
+    var plottype: PlotType = .line
 }
 
 struct MathGraph: View {
@@ -108,12 +116,29 @@ struct MathGraph: View {
             // Series lines
             ForEach(serieses) { series in
                 ForEach(series.points) { point in
-                    LineMark(
-                        x: .value("X", point.xh),
-                        y: .value("Y", point.yv),
-                        series: .value("Line", series.label)
-                    )
-                    .interpolationMethod(.linear)
+                    switch series.plottype {
+                    case .line:
+                        LineMark(
+                            x: .value("X", point.xh),
+                            y: .value("Y", point.yv),
+                            series: .value("Line", series.label)
+                        )
+                        .interpolationMethod(.linear)
+                    case .point:
+                        PointMark(
+                            x: .value("X", point.xh),
+                            y: .value("Y", point.yv),
+                            series: .value("Line", series.label)
+                        )
+                    case .area:
+                        AreaMark(
+                            x: .value("X", point.xh),
+                            y: .value("Y", point.yv),
+                            series: .value("Line", series.label)
+                        )
+                        
+                    }
+                    
                 }
                 .foregroundStyle(by: .value("Line", series.label))
             }
