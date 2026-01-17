@@ -8,6 +8,7 @@
 import Foundation
 import SwiftUI
 
+
 ///Represents a point on a graph, with xh and yv as x and y
 class GraphPoint: Identifiable {
     var id: UUID = UUID()
@@ -26,21 +27,33 @@ class Function: Identifiable, Hashable {
     //To be expanded upon
     
     nonisolated let id: UUID = UUID()
-    
+    var derivative: Function? = nil
     ///This gives a view that looks like the function, like Text("x") for identity
     nonisolated let mathText: String?
     nonisolated let transform: (Double) -> Double
-    init(transform: @escaping (Double) -> Double, text: String? = nil) {
+    init(transform: @escaping (Double) -> Double, text: String? = nil, derivativeOrigin: ((Double) -> Double)? = nil) {
         self.transform = transform
         self.mathText = text
+        if derivative == nil {} else {
+            self.derivative = Function(transform: derivativeOrigin!)
+        }
     }
     
-    static let identity: Function = .init(transform: { $0 }, text: "x")
-    static let sine: Function = .init(transform: { sin($0) }, text: "sin(x)")
-    static let square: Function = .init(transform: { $0 * $0 }, text: "x^2")
-    static let naturalLog: Function = .init(transform: { log($0) }, text: "ln(x)")
-    static let inverse: Function = .init(transform: { 1 / $0 }, text: "1/x")
-    static let exp: Function = .init(transform: { pow(2.71828, $0) }, text: "e^x")
+    static let identity: Function = .init(transform: { $0 }, text: "x") { _ in
+        1
+    }
+    static let sine: Function = .init(transform: { sin($0) }, text: "sin(x)") {
+        sin($0 - Double.pi/2)
+    }
+    static let square: Function = .init(transform: { $0 * $0 }, text: "x^2") {
+        2*$0
+    }
+    static let inverse: Function = .init(transform: { 1 / $0 }, text: "1/x") {
+        -1/pow($0, 2)
+    }
+    static let exp: Function = .init(transform: { pow(2.71828, $0) }, text: "e^x") {
+        pow(2.71828, $0)
+    }
     
     static let humpy: Function = .init(transform: {
         let x = $0 / 1.5
@@ -140,7 +153,7 @@ func generateIntegral(for inputs: [GraphPoint]) async -> [GraphPoint] {
 func riemannSum(for inputs: [GraphPoint], range: ClosedRange<Double>) async throws -> (Double, [GraphPoint]) {
     print("\n INTEGRAl: ")
     var filtered = inputs.filter({ $0.xh > range.lowerBound && $0.xh < range.upperBound})
-
+    
     _ = filtered.popLast()
     
     
@@ -320,7 +333,7 @@ nonisolated struct PlotKey: Hashable, Equatable {
         lhs.xUpperBucket == rhs.xUpperBucket &&
         lhs.refined == rhs.refined
     }
-
+    
 }
 
 actor TaylorSeriesCache {
