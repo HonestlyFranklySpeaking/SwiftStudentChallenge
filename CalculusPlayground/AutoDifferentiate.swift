@@ -5,6 +5,13 @@
 //  Created by Timothy Qin on 17/1/26.
 //
 import SwiftUI
+import Swift
+
+
+precedencegroup CompositionPrecedence {
+    higherThan: MultiplicationPrecedence
+}
+
 
 //Takes the derivative
 prefix operator ∂
@@ -19,12 +26,12 @@ infix operator **: MultiplicationPrecedence
 prefix operator †
 
 // a >>> b is a(b())
-infix operator >>>: BitwiseShiftPrecedence
+infix operator >>>: CompositionPrecedence
 
 //Same as ** and ++ but with >>>
-infix operator >>>>: BitwiseShiftPrecedence
+infix operator >>>>: CompositionPrecedence
 
-infix operator <<<: BitwiseShiftPrecedence
+infix operator <<<: CompositionPrecedence
 
 extension Function {
     static prefix func †(_ x: Function) -> ((Double) -> Double) {
@@ -35,45 +42,47 @@ extension Function {
     }
     static func >>>>(lhs: Function, rhs: Function) -> Function {
         return Function() {
-            (†lhs)((†rhs)($0))
+            (†rhs)((†lhs)($0))
         }
     }
     static func <<<(lhs: Function, rhs: Function) -> Function {
         return rhs >>> lhs
     }
     static func ++(lhs: Function, rhs: Function) -> Function {
-        return Function() { lhs.transform($0) + rhs.transform($0) }
+        return Function() { (†lhs)($0) + (†rhs)($0) }
     }
     static func **(lhs: Function, rhs: Function) -> Function {
-        return Function() { lhs.transform($0) * rhs.transform($0) }
+        return Function() { (†lhs)($0) * (†rhs)($0) }
     }
     
     static func >>>(lhs: Function, rhs: Function) -> Function {
         if ∂lhs != nil && ∂rhs != nil {
-            return Function( transform: { lhs.transform($0) * rhs.transform($0) }, text: "(\(lhs.mathText!)) >>> (\(rhs.mathText!))", derivativeOrigin: †((∂lhs)! ** lhs >>>> (∂rhs)!))
+            let derivative = (∂lhs)! ** lhs >>>> (∂rhs)!
+            return Function( transform: { (†rhs)((†lhs)($0)) }, text: "(\(lhs.mathText!)) >>> (\(rhs.mathText!))", derivativeOrigin: †(derivative))
         } else {
             return Function() {
-                lhs.transform($0) * rhs.transform($0)
+                (†rhs)((†lhs)($0))
             }
         }
         
     }
     static func +(lhs: Function, rhs: Function) -> Function {
         if ∂lhs != nil && ∂rhs != nil {
-            return Function( transform: { lhs.transform($0) * rhs.transform($0) }, text: "(\(lhs.mathText!)) + (\(rhs.mathText!))", derivativeOrigin: †((∂lhs)! ++ (∂rhs)!))
+            return Function( transform: { (†lhs)($0) * (†rhs)($0) }, text: "(\(lhs.mathText!)) + (\(rhs.mathText!))", derivativeOrigin: †((∂lhs)! ++ (∂rhs)!))
         } else {
             return Function() {
-                lhs.transform($0) * rhs.transform($0)
+                (†lhs)($0) * (†rhs)($0)
             }
         }
         
     }
     static func *(lhs: Function, rhs: Function) -> Function {
         if ∂lhs != nil && ∂rhs != nil {
-            return Function( transform: { lhs.transform($0) * rhs.transform($0) }, text: "(\(lhs.mathText!)) * (\(rhs.mathText!))", derivativeOrigin: †((∂lhs)! ++ (∂rhs)!))
+            let derivative = (∂lhs)! ** rhs ++ (∂rhs)! ** lhs
+            return Function( transform: { (†lhs)($0) * (†rhs)($0) }, text: "(\(lhs.mathText!)) * (\(rhs.mathText!))", derivativeOrigin: †derivative)
         } else {
             return Function() {
-                lhs.transform($0) * rhs.transform($0)
+                (†lhs)($0) * (†rhs)($0)
             }
         }
         
@@ -81,19 +90,21 @@ extension Function {
     
 }
 
-let fpx: Function = (∂(Function.sine >>> Function.square))!
-let realfpx: Function = Function {
-    
+
+let fpx: Function = (∂(Function.sine * Function.naturalLog))!
+let realfpx: Function = Function { x in
+    cos(x)*log(x) + sin(x)/x
 }
-struct view: View {
+struct autodiffTestView: View {
     @State var x: Double = 0.0
     var body: some View {
         Text(((†fpx)(x)).description)
         Slider(value: $x, in: -10.0...10.0)
         Text(x.description)
+        Text((†realfpx)(x).description)
     }
 }
 
 #Preview {
-    view()
+    autodiffTestView()
 }

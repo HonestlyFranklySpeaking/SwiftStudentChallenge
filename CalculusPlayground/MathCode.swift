@@ -43,7 +43,7 @@ class Function: Identifiable, Hashable {
         1
     }
     static let sine: Function = .init(transform: { sin($0) }, text: "sin(x)") {
-        sin($0 + Double.pi/2)
+        cos($0)
     }
     static let square: Function = .init(transform: { $0 * $0 }, text: "x^2") {
         2*$0
@@ -57,6 +57,9 @@ class Function: Identifiable, Hashable {
     
     static let naturalLog: Function = .init(transform: { log($0) }, text: "ln(x)") {
         log($0)
+    }
+    static let zero: Function = .init(transform: { 0 * $0 }, text: "0x") { _ in
+        0
     }
     static let humpy: Function = .init(transform: {
         let x = $0 / 1.5
