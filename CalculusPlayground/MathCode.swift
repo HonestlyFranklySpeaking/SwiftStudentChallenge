@@ -34,7 +34,7 @@ class Function: Identifiable, Hashable {
     init(transform: @escaping (Double) -> Double, text: String? = nil, derivativeOrigin: ((Double) -> Double)? = nil) {
         self.transform = transform
         self.mathText = text
-        if derivative == nil {} else {
+        if derivativeOrigin == nil {} else {
             self.derivative = Function(transform: derivativeOrigin!)
         }
     }
@@ -43,7 +43,7 @@ class Function: Identifiable, Hashable {
         1
     }
     static let sine: Function = .init(transform: { sin($0) }, text: "sin(x)") {
-        sin($0 - Double.pi/2)
+        sin($0 + Double.pi/2)
     }
     static let square: Function = .init(transform: { $0 * $0 }, text: "x^2") {
         2*$0
@@ -55,6 +55,9 @@ class Function: Identifiable, Hashable {
         pow(2.71828, $0)
     }
     
+    static let naturalLog: Function = .init(transform: { log($0) }, text: "ln(x)") {
+        log($0)
+    }
     static let humpy: Function = .init(transform: {
         let x = $0 / 1.5
         let a = (x+10)*(x+10)*(x-15)
