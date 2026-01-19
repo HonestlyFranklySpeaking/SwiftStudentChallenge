@@ -144,9 +144,9 @@ func generateIntegral(for inputs: [GraphPoint]) async -> [GraphPoint] {
         let p2 = inputs[i + 1]
         
         let dx = Double(p2.xh - p1.xh)
-        let ave = Double(p1.yv + p2.yv) / 2.0
+        let f = p1.yv
         
-        area += dx * ave
+        area += f * dx
         
         // Append the new coordinate for the integral graph
         integralPoints.append(GraphPoint(xh: p2.xh, yv: area))

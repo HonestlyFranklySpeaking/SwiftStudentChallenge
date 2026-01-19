@@ -34,7 +34,7 @@ struct IntegralPlayground: View {
                 
                 Text(debug)
             }
-            .navigationTitle("Integrals")
+            .navigationTitle("Integrals ZZZ")
             .padding()
             .task {
                 await generateData()
