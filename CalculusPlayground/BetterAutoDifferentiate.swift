@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SwiftUI
 
 // Fundamental components making up a function. indirect just means the enum can be recursive.
 indirect enum Component: Equatable {
@@ -15,6 +16,7 @@ indirect enum Component: Equatable {
     case compose(_ g: Component, _ f: Component)
     case variable
     case constant(_ value: Double)
+    case ln(_ arg: Component) // <-- NEW: natural logarithm
 }
 
 struct Expression: Identifiable, Hashable {
@@ -23,18 +25,17 @@ struct Expression: Identifiable, Hashable {
     let mathText: String?
     let transform: (Double) -> Double
     
-    
     // This is the thing that is used when differentiating. Its basically a combonation of components that representa a function.
     var directory: Component
     
-    init(mathText: String? = nil, directory: Component, transform: @escaping (Double) -> Double) {
+    init(_ mathText: String? = nil, directory: Component, transform: @escaping (Double) -> Double) {
         self.mathText = mathText
         self.transform = transform
         self.directory = directory
     }
     
     // init via Composition
-    init(mathText: String?, g: Expression, f: Expression) {
+    init(_ mathText: String?, g: Expression, f: Expression) {
         self.mathText = mathText
         
         self.transform = { x in
@@ -46,7 +47,7 @@ struct Expression: Identifiable, Hashable {
     }
     
     // init via Sum
-    init(mathText: String?, a1: Expression, a2: Expression) {
+    init(_ mathText: String?, a1: Expression, a2: Expression) {
         self.mathText = mathText
         
         self.transform = { x in
@@ -57,7 +58,7 @@ struct Expression: Identifiable, Hashable {
     }
     
     // init via Product
-    init(mathText: String?, f1: Expression, f2: Expression) {
+    init(_ mathText: String?, f1: Expression, f2: Expression) {
         self.mathText = mathText
         
         self.transform = { x in
@@ -68,7 +69,7 @@ struct Expression: Identifiable, Hashable {
     }
  
     // init via power
-    init(mathText: String?, b: Expression, e: Expression) {
+    init(_ mathText: String?, b: Expression, e: Expression) {
         self.mathText = mathText
         
         self.transform = { x in
@@ -78,6 +79,43 @@ struct Expression: Identifiable, Hashable {
         self.directory = Component.power(e.directory, b.directory)
     }
     
+    // init from directory
+    init(_ mathText: String?, directory: Component) {
+        self.mathText = mathText
+        self.directory = directory
+        
+        // Recursively derives a transform from a directory.
+        func evaluator(for component: Component) -> (Double) -> Double {
+            switch component {
+            case .variable:
+                return { x in x }
+            case .constant(let value):
+                return { _ in value }
+            case .sum(let a1, let a2):
+                let f1 = evaluator(for: a1)
+                let f2 = evaluator(for: a2)
+                return { x in f1(x) + f2(x) }
+            case .product(let f1, let f2):
+                let f1 = evaluator(for: f1)
+                let f2 = evaluator(for: f2)
+                return { x in f1(x) * f2(x) }
+            case .power(let b, let e):
+                let base = evaluator(for: b)
+                let exp = evaluator(for: e)
+                return { x in pow(base(x), exp(x)) }
+            case .compose(let g, let f):
+                let outer = evaluator(for: f)
+                let inner = evaluator(for: g)
+                return { x in outer(inner(x)) }
+            case .ln(let arg):
+                let evalArg = evaluator(for: arg)
+                return { x in log(evalArg(x)) }
+            }
+        }
+        
+        self.transform = evaluator(for: directory)
+    }
+    
     static func == (lhs: Expression, rhs: Expression) -> Bool {
         lhs.id == rhs.id
     }
@@ -85,13 +123,32 @@ struct Expression: Identifiable, Hashable {
 }
 
 
+func textify(_ component: Component) -> String {
+    switch component {
+    case .variable:
+        return "x"
+    case .constant(let c):
+        return "\(c)"
+    case .sum(let a1, let a2):
+        return "(\(textify(a1)) + \(textify(a2)))"
+    case .product(let f1, let f2):
+        return "(\(textify(f1)) * \(textify(f2)))"
+    case .compose(let g, let f):
+        return "(\(textify(f))(\(textify(g))))"
+    case .power(let b, let e):
+        return "\(textify(b))^\(textify(e))"
+    case .ln(let arg):
+        return "ln(\(textify(arg)))"
+    }
+}
+
 // Differentiates a fucntion directory
 func differentiate(_ directory: Component) -> Component {
     switch directory {
     case .variable:
         return Component.constant(1)
         
-    case .constant(let c):
+    case .constant(_):
         return Component.constant(0)
         
     case .product(let f1, let f2):
@@ -109,11 +166,56 @@ func differentiate(_ directory: Component) -> Component {
         return Component.sum(differentiate(a1), differentiate(a2))
         
     case .power(let b, let e):
-        // I haven't done this yet. You need to use the rule for f(x)^g(x) which is super long. It basically combines the product rule and the ruel for exponentials, so it works for any expression on the base or exponent. You can google it. Its really long, so its just a bit of work to code at the moment.
-        
-    default:
-        return Component.constant(67)
-        
+        // Chain rule for f(x)^g(x):
+        // d/dx [b^e] = b^e * (e * b'/b + e' * ln(b))
+        // where b = f(x), e = g(x)
+        let bPrime = differentiate(b)
+        let ePrime = differentiate(e)
+        let term1 = Component.product(e, Component.product(bPrime, Component.power(b, Component.constant(-1))))
+        let term2 = Component.product(ePrime, Component.ln(b))
+        let sum = Component.sum(term1, term2)
+        return Component.product(Component.power(b, e), sum)
+    case .ln(let arg):
+        // d/dx ln(f(x)) = f'(x)/f(x)
+        let argPrime = differentiate(arg)
+        return Component.product(argPrime, Component.power(arg, Component.constant(-1)))
     }
 }
 
+struct BetterAutoDifferentiateDemoView: View {
+    @State private var xValue: Double = 2.0
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("BetterAutoDifferentiate Demo")
+                .font(.title).bold()
+            
+            // Let's try f(x) = x^x
+            let x = Component.variable
+            let powx = Component.product(.variable, .constant(3))
+            let expr = Expression("f(x)", directory: powx)
+            let derivativeComponent = differentiate(expr.directory)
+            let derivativeExpr = Expression("f'(x)", directory: derivativeComponent)
+            
+            Group {
+                Text("Expression: f(x) = \(textify(expr.directory))")
+                Text("Derivative: f'(x) = \(textify(derivativeComponent))")
+                HStack {
+                    Text("x =")
+                    Slider(value: $xValue, in: 0.01...10, step: 0.01)
+                    Text(String(format: "%.2f", xValue))
+                }
+                Text("f(\(String(format: "%.2f", xValue))) = \(expr.transform(xValue))")
+                Text("f'(\(String(format: "%.2f", xValue))) = \(derivativeExpr.transform(xValue))")
+            }
+            .font(.system(.body, design: .monospaced))
+            
+            Spacer()
+        }
+        .padding()
+    }
+}
+
+#Preview {
+    BetterAutoDifferentiateDemoView()
+}
