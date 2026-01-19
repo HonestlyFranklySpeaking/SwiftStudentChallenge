@@ -5,7 +5,6 @@
 //  Created by Timothy Qin on 17/1/26.
 //
 import SwiftUI
-import Swift
 
 
 precedencegroup CompositionPrecedence {
@@ -51,13 +50,11 @@ extension Function {
     static func ++(lhs: Function, rhs: Function) -> Function {
         return Function() { (†lhs)($0) + (†rhs)($0) }
     }
-    static func **(lhs: Function, rhs: Function) -> Function {
-        return Function() { (†lhs)($0) * (†rhs)($0) }
-    }
+
     
     static func >>>(lhs: Function, rhs: Function) -> Function {
         if ∂lhs != nil && ∂rhs != nil {
-            let derivative = (∂lhs)! ** lhs >>>> (∂rhs)!
+            let derivative = (∂lhs)! * lhs >>>> (∂rhs)!
             return Function( transform: { (†rhs)((†lhs)($0)) }, text: "(\(lhs.mathText!)) >>> (\(rhs.mathText!))", derivativeOrigin: †(derivative))
         } else {
             return Function() {
@@ -78,7 +75,7 @@ extension Function {
     }
     static func *(lhs: Function, rhs: Function) -> Function {
         if ∂lhs != nil && ∂rhs != nil {
-            let derivative = (∂lhs)! ** rhs ++ (∂rhs)! ** lhs
+            let derivative = (∂lhs)! * rhs ++ (∂rhs)! * lhs
             return Function( transform: { (†lhs)($0) * (†rhs)($0) }, text: "(\(lhs.mathText!)) * (\(rhs.mathText!))", derivativeOrigin: †derivative)
         } else {
             return Function() {
@@ -91,9 +88,9 @@ extension Function {
 }
 
 
-let fpx: Function = (∂(Function.sine * Function.naturalLog))!
+let fpx: Function = (∂(Function.square * Function.sine >>> Function.naturalLog + Function.inverse))!
 let realfpx: Function = Function { x in
-    cos(x)*log(x) + sin(x)/x
+    2*x*log(sin(x)) + pow(x, 2)*cos(x)*(1/sin(x)) + -1*pow(x, -2)
 }
 struct autodiffTestView: View {
     @State var x: Double = 0.0

@@ -55,8 +55,8 @@ class Function: Identifiable, Hashable {
         pow(2.71828, $0)
     }
     
-    static let naturalLog: Function = .init(transform: { log($0) }, text: "ln(x)") {
-        log($0)
+    static let naturalLog: Function = .init(transform: { log($0) }, text: "ln(x)") { x in
+        1/x
     }
     static let zero: Function = .init(transform: { 0 * $0 }, text: "0x") { _ in
         0
