@@ -75,12 +75,15 @@ extension Function {
     static func functionLog(_ b: Function, _ e: Function) -> Function {
         return b >>> .naturalLog * b >>> .naturalLog >>> .inverse
     }
+    static func constant(_ n: Double) -> Function {
+        return Function(transform: ({_ in n} as ((Double) -> Double)), text: n.description, derivativeText: "0", derivativeOrigin: {_ in 0} as ((Double) -> Double))
+    }
 } //End of submission
 
 //Test
-let fpx: Function = (???(Function.sine >>> Function.square))!
+let fpx: Function = (???(Function.functionExp( Function.identity, Function.constant(2))))!
 let realfpx: Function = Function { x in
-    2*x*log(sin(x)) + pow(x, 2)*cos(x)*(1/sin(x)) + -1*pow(x, -2)
+    2 * x
 }
 struct autodiffTestView: View {
     @State var x: Double = 0.0
@@ -92,6 +95,8 @@ struct autodiffTestView: View {
         Text((<!>realfpx)(x).description)
     }
 }
+
+
 #Preview {
     autodiffTestView()
 }
