@@ -61,6 +61,9 @@ class Function: Identifiable, Hashable {
     static let zero: Function = .init(transform: { 0 * $0 }, text: "0x") { _ in
         0
     }
+    static let exponential: Function = .init(transform: {pow(2.71828, $0)}, text: "e^x") {
+        pow(2.71828, $0)
+    }
     static let humpy: Function = .init(transform: {
         let x = $0 / 1.5
         let a = (x+10)*(x+10)*(x-15)
