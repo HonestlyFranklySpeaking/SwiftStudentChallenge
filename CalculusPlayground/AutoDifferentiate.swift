@@ -41,36 +41,36 @@ extension Function {
     static func >>>(lhs: Function, rhs: Function) -> Function {
         if ???lhs != nil && ???rhs != nil {
             let derivative = (???lhs)! * lhs >>> (???rhs)!
-            return Function( transform: { (<!>rhs)((<!>lhs)($0)) }, text: "(\(lhs.mathText!)) >>> (\(rhs.mathText!))", derivativeOrigin: <!>(derivative))
+            return Function( transform: { (<!>rhs)((<!>lhs)($0)) }, text: "(\(lhs.mathText!)) >>> (\(rhs.mathText!))", derivativeText: "(\((???lhs)!.mathText!)) * (\(lhs.mathText!)) >>> (\(((???rhs)!.mathText!)))", derivativeOrigin: <!>(derivative))
         } else {
-            return Function() {
+            return Function(transform: {
                 (<!>rhs)((<!>lhs)($0))
-            }
+            }, text: "(\(lhs.mathText!)) >>> (\(rhs.mathText!))")
         }
     }
     //Adds two functions and creates derivative
     static func +(lhs: Function, rhs: Function) -> Function {
         if ???lhs != nil && ???rhs != nil {
-            return Function( transform: { (<!>lhs)($0) * (<!>rhs)($0) }, text: "(\(lhs.mathText!)) + (\(rhs.mathText!))", derivativeOrigin: <!>((???lhs)! + (???rhs)!))
+            return Function( transform: { (<!>lhs)($0) * (<!>rhs)($0) }, text: "(\(lhs.mathText!)) + (\(rhs.mathText!))", derivativeText: "(\((???lhs)!.mathText!)) + (\((???rhs)!.mathText!))", derivativeOrigin: <!>((???lhs)! + (???rhs)!))
         } else {
-            return Function() {
+            return Function(transform: {
                 (<!>lhs)($0) + (<!>rhs)($0)
-            }
+            }, text: "(\(lhs.mathText!)) + (\(rhs.mathText!))")
         }
     }
     //Multiplies to functions and creates derivative
     static func *(lhs: Function, rhs: Function) -> Function {
         if ???lhs != nil && ???rhs != nil {
             let derivative = (???lhs)! * rhs + (???rhs)! * lhs
-            return Function( transform: { (<!>lhs)($0) * (<!>rhs)($0) }, text: "(\(lhs.mathText!)) * (\(rhs.mathText!))", derivativeOrigin: <!>derivative)
+            return Function( transform: { (<!>lhs)($0) * (<!>rhs)($0) }, text: "(\(lhs.mathText!)) * (\(rhs.mathText!))", derivativeText: "(\(lhs.mathText!)) + (\((???rhs)!.mathText!)) * (\(rhs.mathText!)) + (\((???rhs)!.mathText!))",  derivativeOrigin: <!>derivative)
         } else {
-            return Function() {
+            return Function(transform: {
                 (<!>lhs)($0) * (<!>rhs)($0)
-            }
+            }, text: "(\(lhs.mathText!)) * (\(rhs.mathText!))")
         }
     }
     static func functionExp(_ b: Function, _ e: Function) -> Function {
-        return ((b >>> .naturalLog * e) >>> .exponential)
+        return ((b >>> .naturalLog * e) >>> .exp)
     }
     static func functionLog(_ b: Function, _ e: Function) -> Function {
         return b >>> .naturalLog * b >>> .naturalLog >>> .inverse
@@ -78,7 +78,7 @@ extension Function {
 } //End of submission
 
 //Test
-let fpx: Function = (???(Function.square * Function.sine >>> Function.naturalLog + Function.inverse))!
+let fpx: Function = (???(Function.sine >>> Function.square))!
 let realfpx: Function = Function { x in
     2*x*log(sin(x)) + pow(x, 2)*cos(x)*(1/sin(x)) + -1*pow(x, -2)
 }
@@ -87,12 +87,11 @@ struct autodiffTestView: View {
     var body: some View {
         Text(((<!>fpx)(x)).description)
         Slider(value: $x, in: -10.0...10.0)
-        Text(fpx.mathText!)
+        Text(fpx.mathText ?? "No text")
         Text(x.description)
         Text((<!>realfpx)(x).description)
     }
 }
-
 #Preview {
     autodiffTestView()
 }
