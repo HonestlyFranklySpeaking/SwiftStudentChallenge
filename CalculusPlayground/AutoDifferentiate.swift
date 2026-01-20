@@ -62,7 +62,7 @@ extension Function {
     static func *(lhs: Function, rhs: Function) -> Function {
         if ???lhs != nil && ???rhs != nil {
             let derivative = (???lhs)! * rhs + (???rhs)! * lhs
-            return Function( transform: { (<!>lhs)($0) * (<!>rhs)($0) }, text: "(\(lhs.mathText!)) * (\(rhs.mathText!))", derivativeText: "(\(lhs.mathText!)) + (\((???rhs)!.mathText!)) * (\(rhs.mathText!)) + (\((???rhs)!.mathText!))",  derivativeOrigin: <!>derivative)
+            return Function( transform: { (<!>lhs)($0) * (<!>rhs)($0) }, text: "(\(lhs.mathText!)) * (\(rhs.mathText!))", derivativeText: "(\(lhs.mathText!)) * (\((???rhs)!.mathText!)) + (\(rhs.mathText!)) * (\((???rhs)!.mathText!))",  derivativeOrigin: <!>derivative)
         } else {
             return Function(transform: {
                 (<!>lhs)($0) * (<!>rhs)($0)
