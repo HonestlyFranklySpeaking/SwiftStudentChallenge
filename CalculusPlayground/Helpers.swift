@@ -10,6 +10,14 @@ import Charts
 
 ///A helper class that uses a shared singleton static member (Helpers.shared)
 class Helpers {
+    func getScreenBounds() -> CGRect {
+        let scenes = UIApplication.shared.connectedScenes
+        let windowScene = scenes.first as? UIWindowScene?
+        let window = windowScene??.windows
+        return window?.first?.screen.bounds ?? CGRect()
+        //Saw this on reddit don't ask
+    }
+    
     static let shared = Helpers()
     ///Gap between dots of the function and taylor series as well as the snap of the slider for center control for Taylor Series and Tangent
     let increment = 0.08
