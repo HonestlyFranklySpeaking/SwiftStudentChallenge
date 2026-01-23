@@ -8,6 +8,7 @@ import SwiftUI
 import Foundation
 
 struct ruler1: View {
+    let gradientStops: [Gradient.Stop]
     @State var screenSize: CGSize
     @State private var offset = CGFloat.zero
     @State var positionOffset = CGFloat.zero
@@ -44,7 +45,7 @@ struct ruler1: View {
     var body: some View {
         ZStack(alignment: .bottomLeading) {
             RoundedRectangle(cornerSize: CGSize(width: 10, height: 10))
-                .foregroundStyle(.gray)
+                .foregroundStyle(LinearGradient(stops: gradientStops, startPoint: .topLeading, endPoint: .bottomTrailing))
                 .frame(height: 50, alignment: .center)
             ticks
         }
@@ -54,7 +55,9 @@ struct ruler1: View {
     }
 }
 
+
 struct ruler2: View {
+    let gradientStops: [Gradient.Stop]
     @State var screenSize: CGSize
     @State private var offset = CGFloat.zero
     @State var positionOffset = CGFloat.zero
@@ -81,8 +84,9 @@ struct ruler2: View {
     var body: some View {
         ZStack(alignment: .topLeading) {
             RoundedRectangle(cornerSize: CGSize(width: 10, height: 10))
-                .foregroundStyle(.gray)
+                .foregroundStyle(LinearGradient(stops: gradientStops, startPoint: .topLeading, endPoint: .bottomTrailing))
                 .frame(height: 50, alignment: .center)
+            
             ticks
         }
     }
@@ -96,11 +100,33 @@ struct SlideRulePlayground: View {
     }
     let tickNum = 10
     let tickRange = 1..<11 as Range<Int>
+    func logStops(from: Color, to: Color) -> [Gradient.Stop] {
+        func intermediateColor(zero: UIColor, one: UIColor, at: Double) -> Color {
+            var zeroRed: CGFloat = 0.0
+            var zeroGreen: CGFloat = 0.0
+            var zeroBlue: CGFloat = 0.0
+            var oneRed: CGFloat = 0.0
+            var oneGreen: CGFloat = 0.0
+            var oneBlue: CGFloat = 0.0
+            
+            zero.getRed(&zeroRed, green: &zeroGreen, blue: &zeroBlue, alpha: nil)
+            
+            one.getRed(&oneRed, green: &oneGreen, blue: &oneBlue, alpha: nil)
+            
+            let redDifferance = oneRed - zeroRed
+            let greenDifferance = oneGreen - zeroGreen
+            let blueDifferance = oneBlue - zeroBlue
+            return Color(red: zeroRed + (redDifferance) * at, green: zeroGreen + (greenDifferance) * at, blue: zeroBlue + (blueDifferance) * at)
+        }
+        return (0..<10 as Range<Int>).map { i in
+            Gradient.Stop(color: intermediateColor(zero: UIColor(from), one: UIColor(to), at: Double((i)/9)), location: log(CGFloat(i+1))/log(10))
+        }
+    }
     var body: some View {
         GeometryReader { geo in
             VStack(spacing: 0.5) {
-                ruler1(screenSize: geo.size, tickRange: tickRange, tick: AnyView(tick))
-                ruler2(screenSize: geo.size, tickRange: tickRange, tick: AnyView(tick))
+                ruler1(gradientStops: logStops(from: .blue, to: .teal), screenSize: geo.size, tickRange: tickRange, tick: AnyView(tick))
+                ruler2(gradientStops: logStops(from: .blue, to: .teal), screenSize: geo.size, tickRange: tickRange, tick: AnyView(tick))
             }.padding(10.0)
         }
     }
