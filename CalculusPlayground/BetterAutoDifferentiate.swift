@@ -13,10 +13,11 @@ indirect enum Component: Equatable {
     case sum(_ a1: Component, _ a2: Component)
     case product(_ f1: Component, _ f2: Component)
     case power(_ b: Component, _ e: Component)
-    case compose(_ g: Component, _ f: Component)
     case variable
     case constant(_ value: Double)
     case ln(_ arg: Component) // <-- NEW: natural logarithm
+    case sin(_ arg: Component)
+    case cos(_ arg: Component)
 }
 
 struct Expression: Identifiable, Hashable {
@@ -34,17 +35,6 @@ struct Expression: Identifiable, Hashable {
         self.directory = directory
     }
     
-    // init via Composition
-    init(_ mathText: String?, g: Expression, f: Expression) {
-        self.mathText = mathText
-        
-        self.transform = { x in
-            let insideValue = g.transform(x)
-            return f.transform(insideValue)
-        }
-        
-        self.directory = Component.compose(g.directory, f.directory)
-    }
     
     // init via Sum
     init(_ mathText: String?, a1: Expression, a2: Expression) {
@@ -103,13 +93,15 @@ struct Expression: Identifiable, Hashable {
                 let base = evaluator(for: b)
                 let exp = evaluator(for: e)
                 return { x in pow(base(x), exp(x)) }
-            case .compose(let g, let f):
-                let outer = evaluator(for: f)
-                let inner = evaluator(for: g)
-                return { x in outer(inner(x)) }
             case .ln(let arg):
                 let evalArg = evaluator(for: arg)
                 return { x in log(evalArg(x)) }
+            case .sin(let arg):
+                let evalArg = evaluator(for: arg)
+                return { x in sin(evalArg(x)) }
+            case .cos(let arg):
+                let evalArg = evaluator(for: arg)
+                return { x in cos(evalArg(x)) }
             }
         }
         
@@ -133,12 +125,14 @@ func textify(_ component: Component) -> String {
         return "(\(textify(a1)) + \(textify(a2)))"
     case .product(let f1, let f2):
         return "(\(textify(f1)) * \(textify(f2)))"
-    case .compose(let g, let f):
-        return "(\(textify(f))(\(textify(g))))"
     case .power(let b, let e):
         return "\(textify(b))^\(textify(e))"
     case .ln(let arg):
         return "ln(\(textify(arg)))"
+    case .sin(let arg):
+        return "sin(\(textify(arg)))"
+    case .cos(let arg):
+        return "sin(\(textify(arg)))"
     }
 }
 
@@ -155,11 +149,6 @@ func differentiate(_ directory: Component) -> Component {
         return Component.sum(
             .product(f1, differentiate(f2)),
             .product(f2, differentiate(f1))
-        )
-    case .compose(let g, let f):
-        return Component.product(
-            differentiate(g),
-            .compose(differentiate(f), g)
         )
         
     case .sum(let a1, let a2):
@@ -179,6 +168,15 @@ func differentiate(_ directory: Component) -> Component {
         // d/dx ln(f(x)) = f'(x)/f(x)
         let argPrime = differentiate(arg)
         return Component.product(argPrime, Component.power(arg, Component.constant(-1)))
+        
+    case .sin(let arg):
+        // d/dx ln(f(x)) = f'(x)/f(x)
+        let argPrime = differentiate(arg)
+        return Component.product(argPrime, .cos(arg))
+    case .cos(let arg):
+        // d/dx ln(f(x)) = f'(x)/f(x)
+        let argPrime = differentiate(arg)
+        return Component.product(argPrime, .product(.constant(-1), .sin(arg)))
     }
 }
 
@@ -191,8 +189,9 @@ struct BetterAutoDifferentiateDemoView: View {
                 .font(.title).bold()
             
             // Let's try f(x) = x^x
-            let x = Component.variable
-            let powx = Component.product(.variable, .constant(3))
+            let powx = Component.product(.sin(.variable), .constant(2))
+            
+            
             let expr = Expression("f(x)", directory: powx)
             let derivativeComponent = differentiate(expr.directory)
             let derivativeExpr = Expression("f'(x)", directory: derivativeComponent)
