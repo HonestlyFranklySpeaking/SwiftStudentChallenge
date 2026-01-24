@@ -9,6 +9,24 @@ import Foundation
 import SwiftUI
 
 
+///Represents a ClosedRange<Double> that may be reversed(-4...-1)
+struct ReversibleRange {
+    var range: ClosedRange<Double>
+    var isReverse: Bool = false
+    init(_ range: ClosedRange<Double>, reverse: Bool = false) {
+        self.range = range
+        self.isReverse = reverse
+    }
+    init(_ start: Double, _ end: Double) {
+        if start > end {
+            range = end ... start
+        } else {
+            range = start ... end
+            isReverse = true
+        }
+    }
+}
+
 ///Represents a point on a graph, with xh and yv as x and y
 class GraphPoint: Identifiable {
     var id: UUID = UUID()
@@ -136,48 +154,44 @@ func generateIntegral(for inputs: [GraphPoint]) async -> [GraphPoint] {
     guard inputs.count >= 2 else { return [] }
     
     // The integral graph starts at the first x-coordinate with a value of 0
-    var integralPoints: [GraphPoint] = [GraphPoint(xh: inputs[0].xh, yv: 0)]
-    var area: Double = 0.0
+    var integralPoints: [GraphPoint] = []
     
-    // Iterate through the segments to calculate the area of each trapezoid
-    for i in 0..<(inputs.count - 1) {
-        let p1 = inputs[i]
-        let p2 = inputs[i + 1]
-        
-        let dx = Double(p2.xh - p1.xh)
-        let f = p1.yv
-        
-        area += f * dx
-        
-        // Append the new coordinate for the integral graph
-        integralPoints.append(GraphPoint(xh: p2.xh, yv: area))
+    // Iterate through the points to calculate ∫ from 0 to n for all n
+    for h in 2..<(inputs.count) {
+        do {
+            try integralPoints.append(GraphPoint(xh: integralPoints[h].xh, yv: Double(await riemannSum(for: inputs, range_r: ReversibleRange(0, Double(h))).0)))
+        } catch {}
     }
     
     return integralPoints
 }
 
 
-func riemannSum(for inputs: [GraphPoint], range: ClosedRange<Double>) async throws -> (Double, [GraphPoint]) {
+func riemannSum(for inputs: [GraphPoint], range_r: ReversibleRange) async throws -> (Double, [GraphPoint]) {
     print("\n INTEGRAl: ")
-    var filtered = inputs.filter({ $0.xh > range.lowerBound && $0.xh < range.upperBound})
-    
-    _ = filtered.popLast()
-    
+    let range = range_r.range
+    let leftHand = inputs.filter({ $0.xh >= range.lowerBound && $0.xh < range.upperBound})
+    let rightHand = inputs.filter({ $0.xh > range.lowerBound && $0.xh <= range.upperBound})
     
     // prevents index out of range error
-    guard filtered.count > 2 else {
+    guard leftHand.count > 2 else {
         return (0, [])
     }
     
     
-    let h = filtered[1].xh - filtered[0].xh
+    let h = leftHand[1].xh - leftHand[0].xh
     print("H: \(h)")
     
     var sum = 0.0
     var rectangles = [] as [GraphPoint]
-    for i in filtered {
+    for (num, i) in leftHand.enumerated() {
+        print("One rect added")
         
-        sum += (i.yv * h)
+        
+        
+        sum += ((i.yv * h) + (rightHand[num].yv * h))/2
+        
+        print("rect area: \(((i.yv * h) + (rightHand[num].yv * h))/2)")
         rectangles.append(GraphPoint(xh: i.xh + h * 1/300, yv: i.yv))
         rectangles.append(GraphPoint(xh: i.xh + h * 299/300, yv: i.yv))
         
@@ -185,6 +199,10 @@ func riemannSum(for inputs: [GraphPoint], range: ClosedRange<Double>) async thro
     
     guard !sum.isNaN else {
         throw integralError.invalidSum
+    }
+    
+    if range_r.isReverse {
+        sum *= -1
     }
     
     print("SUM: \(sum) \n")

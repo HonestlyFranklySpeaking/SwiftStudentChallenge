@@ -10,7 +10,7 @@ import Charts
 
 struct RiemannSumPlayground: View {
     @State var visualInputPoints: [GraphPoint] = []
-    @State var increment: Double = 0.05
+    @State var increment: Double = 1
     
     let visualIncrement: Double = 0.05
     
@@ -31,7 +31,9 @@ struct RiemannSumPlayground: View {
                 ])
                 Spacer()
                 
-                Slider(value: $increment, in: 0.05...1 as ClosedRange<Double>, step: 0.01) {
+                Text(increment.description)
+                
+                Slider(value: $increment, in: 0.005...1 as ClosedRange<Double>, step: 0.005) {
                     Text("Increment size")
                 }
                 
@@ -76,7 +78,7 @@ struct RiemannSumPlayground: View {
         inputPoints = await generateData(step: increment)
         visualInputPoints = await generateData(step: visualIncrement)
         do {
-            (integral, rectanglePoints) = try await riemannSum(for: inputPoints, range: range)
+            (integral, rectanglePoints) = try await riemannSum(for: inputPoints, range_r: ReversibleRange(range))
         } catch {
             print(error.localizedDescription)
         }
@@ -135,7 +137,7 @@ struct RiemannSumPlayground: View {
 
 
 #Preview {
-    IntegralPlayground()
+    RiemannSumPlayground()
 }
 
 

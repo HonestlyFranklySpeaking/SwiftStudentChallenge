@@ -90,5 +90,5 @@ struct IntegralPlayground: View {
 
 
 #Preview {
-    DerivativePlayground()
+    IntegralPlayground()
 }
