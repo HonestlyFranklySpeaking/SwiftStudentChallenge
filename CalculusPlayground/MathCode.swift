@@ -48,7 +48,7 @@ class Function: Identifiable, Hashable {
     var derivative: Function? = nil
     ///This gives a view that looks like the function, like Text("x") for identity
     nonisolated let mathText: String?
-    nonisolated let transform: (Double) -> Double
+    let transform: (Double) -> Double
     init(transform: @escaping (Double) -> Double, text: String = "Ifshown: ERROR", derivativeText: String? = nil, derivativeOrigin: ((Double) -> Double)? = nil) {
         self.transform = transform
         self.mathText = text
@@ -189,7 +189,7 @@ func riemannSum(for inputs: [GraphPoint], range range_r: ReversibleRange) async 
     
     var sum = 0.0
     var rectangles = [] as [GraphPoint]
-    for (num, leftHandPoint) in leftHand.enumerated() {
+    for leftHandPoint in leftHand {
         print("One rect added")
         
         
