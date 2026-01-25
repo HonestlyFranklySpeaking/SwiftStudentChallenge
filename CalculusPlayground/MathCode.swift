@@ -146,6 +146,7 @@ struct TaylorSeriesResult {
 
 enum integralError: Error, LocalizedError {
     case invalidSum
+    case invalidRange
 }
 
 
@@ -153,29 +154,33 @@ func generateIntegral(for inputs: [GraphPoint]) async -> [GraphPoint] {
     // Ensure we have at least two points to form a trapezoid
     guard inputs.count >= 2 else { return [] }
     
-    // The integral graph starts at the first x-coordinate with a value of 0
     var integralPoints: [GraphPoint] = []
     
     // Iterate through the points to calculate ∫ from 0 to n for all n
-    for h in 2..<(inputs.count) {
+    for h in 0..<(inputs.count) {
         do {
-            try integralPoints.append(GraphPoint(xh: integralPoints[h].xh, yv: Double(await riemannSum(for: inputs, range_r: ReversibleRange(0, Double(h))).0)))
-        } catch {}
+            try integralPoints.append(GraphPoint(xh: inputs[h].xh, yv: Double(await riemannSum(for: inputs, range: ReversibleRange(0, inputs[h].xh)).0)))
+        } catch integralError.invalidRange {
+            print("InvalidRange")
+        } catch {
+        }
     }
-    
     return integralPoints
 }
 
-
-func riemannSum(for inputs: [GraphPoint], range_r: ReversibleRange) async throws -> (Double, [GraphPoint]) {
+func riemannSum(for inputs: [GraphPoint], range range_r: ReversibleRange) async throws -> (Double, [GraphPoint]) {
     print("\n INTEGRAl: ")
     let range = range_r.range
     let leftHand = inputs.filter({ $0.xh >= range.lowerBound && $0.xh < range.upperBound})
-    let rightHand = inputs.filter({ $0.xh > range.lowerBound && $0.xh <= range.upperBound})
-    
     // prevents index out of range error
     guard leftHand.count > 2 else {
         return (0, [])
+    }
+    
+    let domain = inputs.first!.xh ... inputs.last!.xh
+
+    guard domain.contains(range_r.range) else {
+        throw integralError.invalidRange
     }
     
     
@@ -184,16 +189,16 @@ func riemannSum(for inputs: [GraphPoint], range_r: ReversibleRange) async throws
     
     var sum = 0.0
     var rectangles = [] as [GraphPoint]
-    for (num, i) in leftHand.enumerated() {
+    for (num, leftHandPoint) in leftHand.enumerated() {
         print("One rect added")
         
         
         
-        sum += ((i.yv * h) + (rightHand[num].yv * h))/2
+        sum += (leftHandPoint.yv * h)
         
-        print("rect area: \(((i.yv * h) + (rightHand[num].yv * h))/2)")
-        rectangles.append(GraphPoint(xh: i.xh + h * 1/300, yv: i.yv))
-        rectangles.append(GraphPoint(xh: i.xh + h * 299/300, yv: i.yv))
+        print("rect area: \(leftHandPoint.yv * h)")
+        rectangles.append(GraphPoint(xh: leftHandPoint.xh + h * 1/300, yv: leftHandPoint.yv))
+        rectangles.append(GraphPoint(xh: leftHandPoint.xh + h * 299/300, yv: leftHandPoint.yv))
         
     }
     
@@ -394,4 +399,8 @@ actor TaylorSeriesCache {
 
 func bucket(_ value: Double, step: Double) -> Double {
     (value / step).rounded() * step
+}
+
+#Preview {
+    IntegralPlayground()
 }

@@ -78,7 +78,7 @@ struct RiemannSumPlayground: View {
         inputPoints = await generateData(step: increment)
         visualInputPoints = await generateData(step: visualIncrement)
         do {
-            (integral, rectanglePoints) = try await riemannSum(for: inputPoints, range_r: ReversibleRange(range))
+            (integral, rectanglePoints) = try await riemannSum(for: inputPoints, range: ReversibleRange(range))
         } catch {
             print(error.localizedDescription)
         }

@@ -9,7 +9,9 @@ import SwiftUI
 import Charts
 
 struct IntegralPlayground: View {
-    
+    @State var done: Bool = false
+    @State var c1: Double = 0
+    @State var c2: Double = 0
     @State var function: Function = Function.sine
     @State var inputPoints: [GraphPoint] = []
     
@@ -31,18 +33,20 @@ struct IntegralPlayground: View {
                 ])
                 
                 Spacer()
+                Text("C1: \(c1)")
+                Slider(value: $c1, in: -5...5, step: 0.5, label: { Text("C1") })
+                Text("C2: \(c2)")
+                Slider(value: $c2, in: -5...5, step: 0.5, label: { Text("C2") })
                 
                 Text(debug)
             }
-            .navigationTitle("Integrals ZZZ")
+            .navigationTitle("Integrals")
             .padding()
             .task {
-                await generateData()
-                
-                integralPoints = await generateIntegral(for: inputPoints)
-                secondIntegralPoints = await generateIntegral(for: integralPoints)
+                await update()
             }
             .toolbar {
+                Image(systemName: done ? "checkmark.circle.fill" : "xmark.circle.fill")
                 Menu {
                     Picker(selection: $function) {
                         Text("Sine").tag(Function.sine)
@@ -61,18 +65,25 @@ struct IntegralPlayground: View {
                 }
                 .onChange(of: function) { _, _ in
                     Task {
-                        await generateData()
-                        
-                        integralPoints = await generateIntegral(for: inputPoints)
-                        secondIntegralPoints = await generateIntegral(for: integralPoints)
+                        await update()
                     }
-                    
                 }
+                .onChange(of: c1) {_, _ in
+                    Task {
+                        //Starts at 1 because you don't have to regenerate og points
+                        await update(startAt: 1)
+                    }
+                }
+                .onChange(of: c2) {_, _ in
+                    Task {
+                        //Starts at step 2 because only integral 2 is affected
+                        await update(startAt: 2)
+                    }
+                }
+
             }
         }
     }
-    
-    
     
     func generateData() async {
         let f = function
@@ -84,7 +95,21 @@ struct IntegralPlayground: View {
         inputPoints = points
         print("\n Generated \(points.count) points for function \(f.id.uuidString.prefix(6)) \n")
     }
-    
+    func update(startAt: Int = 0) async {
+        done = false
+        if startAt == 0 {
+            await generateData()
+            integralPoints = await generateIntegral(for: inputPoints)
+        }
+        if startAt < 2 {
+            for (num, i) in integralPoints.enumerated() { integralPoints[num].yv = i.yv+c1 }
+            secondIntegralPoints = await generateIntegral(for: integralPoints)
+        }
+        if startAt < 3 {
+            for (num, i) in secondIntegralPoints.enumerated() { secondIntegralPoints[num].yv = i.yv+c1 }
+        }
+        done = true
+    }
 }
 
 
