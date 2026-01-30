@@ -12,9 +12,9 @@
 > This is the [Markdown Language]( https://www.markdownguide.org/basic-syntax/ ).
 
 - Features
-	- Fourier Transform
-	- Tenth markings for slide rule
-	- Simplification algorithm for autodiff
+	- [ ] Fourier Transform
+	- [ ] Tenth markings for slide rule
+	- [ ] Simplification algorithm for autodiff
 - Fixes
 	- BetterAutoDifferentiate.swift
 	- BetterAutoDifferentiate.swift
