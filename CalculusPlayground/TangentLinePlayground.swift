@@ -186,6 +186,6 @@ struct TangentLinePlayground: View {
 
 
 #Preview {
-    TaylorSeriesPlayground()
+    TangentLinePlayground()
 }
 
