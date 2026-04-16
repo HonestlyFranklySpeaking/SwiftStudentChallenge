@@ -9,7 +9,7 @@ import Foundation
 import SwiftUI
 
 
-///Represents a ClosedRange<Double> that may be reversed(-4...-1)
+///Represents a ClosedRange<Double> that may be reversed(-1...-4)
 struct ReversibleRange {
     var range: ClosedRange<Double>
     var isReverse: Bool = false
@@ -49,36 +49,19 @@ class Function: Identifiable, Hashable {
     ///This gives a view that looks like the function, like Text("x") for identity
     nonisolated let mathText: String?
     let transform: (Double) -> Double
-    init(transform: @escaping (Double) -> Double, text: String = "Ifshown: ERROR", derivativeText: String? = nil, derivativeOrigin: ((Double) -> Double)? = nil) {
+    init(transform: @escaping (Double) -> Double, text: String = "Ifshown: ERROR") {
         self.transform = transform
         self.mathText = text
-        if derivativeOrigin == nil {} else {
-            self.derivative = Function(transform: derivativeOrigin!, text: derivativeText ?? "(<<\(text)>> does not have derivativeText)")
-        }
     }
     
-    static let identity: Function = .init(transform: { $0 }, text: "x", derivativeText: "1") { _ in
-        1
-    }
-    static let sine: Function = .init(transform: { sin($0) }, text: "sin(x)", derivativeText: "cos(x)") {
-        cos($0)
-    }
-    static let square: Function = .init(transform: { $0 * $0 }, text: "x^2", derivativeText: "2x") {
-        2*$0
-    }
-    static let inverse: Function = .init(transform: { 1 / $0 }, text: "1/x", derivativeText: "-x^(-2)") {
-        -1/pow($0, 2)
-    }
-    static let exp: Function = .init(transform: { pow(2.71828, $0) }, text: "e^x", derivativeText: "e^x") {
-        pow(2.71828, $0)
-    }
+    static let identity: Function = .init(transform: { $0 }, text: "x")
+    static let sine: Function = .init(transform: { sin($0) }, text: "sin(x)")
+    static let square: Function = .init(transform: { $0 * $0 }, text: "x^2")
+    static let inverse: Function = .init(transform: { 1 / $0 }, text: "1/x")
+    static let exp: Function = .init(transform: { pow(2.71828, $0) }, text: "e^x")
     
-    static let naturalLog: Function = .init(transform: { log($0) }, text: "ln(x)", derivativeText: "1/x") { x in
-        1/x
-    }
-    static let zero: Function = .init(transform: { 0 * $0 }, text: "0x", derivativeText: "0") { _ in
-        0
-    }
+    static let naturalLog: Function = .init(transform: { log($0) }, text: "ln(x)")
+    static let zero: Function = .init(transform: { 0 * $0 }, text: "0x")
 
     static let humpy: Function = .init(transform: {
         let x = $0 / 1.5
@@ -402,5 +385,5 @@ func bucket(_ value: Double, step: Double) -> Double {
 }
 
 #Preview {
-    IntegralPlayground()
+    HomeView()
 }
