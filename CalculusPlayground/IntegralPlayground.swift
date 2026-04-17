@@ -26,7 +26,7 @@ struct IntegralPlayground: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 12) {
-                MathGraph(xDomain: $xDomain, serieses: [
+                MathGraph(serieses: [
                     Series(points: inputPoints, label: "Function"),
                     Series(points: integralPoints, label: "Integral"),
                     Series(points: secondIntegralPoints, label: "Second Integral")

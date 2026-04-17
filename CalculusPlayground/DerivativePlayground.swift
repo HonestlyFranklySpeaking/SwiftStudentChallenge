@@ -24,7 +24,7 @@ struct DerivativePlayground: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 12) {
-                MathGraph(xDomain: $xDomain, serieses: [
+                MathGraph(serieses: [
                     Series(points: inputPoints, label: "Function"),
                     Series(points: derivativePoints, label: "Derivative"),
                     Series(points: secondDerivativePoints, label: "Second Derivative")

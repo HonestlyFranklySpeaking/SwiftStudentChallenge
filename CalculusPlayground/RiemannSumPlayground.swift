@@ -25,7 +25,7 @@ struct RiemannSumPlayground: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 12) {
-                MathGraph(xDomain: $xDomain, serieses: [
+                MathGraph(serieses: [
                     Series(points: visualInputPoints, label: "Function"),
                     Series(points: rectanglePoints, label: "Riemann Sum", plottype: .area)
                 ])

@@ -32,7 +32,7 @@ struct TangentLinePlayground: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 12) {
-                MathGraph(xDomain: $xDomain, serieses: [
+                MathGraph(serieses: [
                     Series(points: inputPoints, label: "Function"),
                     Series(points: tangentLine, label: "Tangent Line")
                 ])

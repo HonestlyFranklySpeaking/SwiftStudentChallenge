@@ -28,7 +28,10 @@ struct MathGraph: View {
     
     @State var visibility = [true, false, false]
     
-    @Binding var xDomain: ClosedRange<Double>
+    //Represents graphScale, xDomain, yDomain, pinchScale, pinchBaseXDomain, and pinchBaseYDomain default values
+    let zoomDefaults: (Double, ClosedRange<Double>, ClosedRange<Double>, CGFloat, ClosedRange<Double>, ClosedRange<Double>) = (30, -30...30, -30...30, 1.0, -30...30, -30...30)
+    
+    @State private var xDomain: ClosedRange<Double> = -30...30
     @State private var yDomain: ClosedRange<Double> = -30...30
     
     var serieses: [Series]
@@ -59,6 +62,7 @@ struct MathGraph: View {
         return colorKey.filter { activeLabels.contains($0.key) }
     }
     
+    /// Returns 105 - clamped x
     private func invertedScale(from sliderValue: Double) -> Double {
         let clamped = max(5, min(100, sliderValue))
         return 105 - clamped
@@ -96,11 +100,15 @@ struct MathGraph: View {
                 .gesture(magnificationGesture)
         }
         .task {
-            let half = invertedScale(from: graphScale)
-            xDomain = (-half)...(half)
-            yDomain = (-half)...(half)
-            pinchBaseXDomain = xDomain
-            pinchBaseYDomain = yDomain
+            defaultStartupTask()
+        }
+        .toolbar {
+            Button {
+                (graphScale, xDomain, yDomain, pinchScale, pinchBaseXDomain, pinchBaseYDomain) = zoomDefaults
+                defaultStartupTask()
+            } label: {
+                Image(systemName: "house")
+            }
         }
     }
     
@@ -127,7 +135,7 @@ struct MathGraph: View {
                         .interpolationMethod(.linear)
                     }
                     
-                    if series.plottype == .line {
+                    else if series.plottype == .line {
                         LineMark(
                             x: .value("X", point.xh),
                             y: .value("Y", point.yv),
@@ -203,4 +211,16 @@ struct MathGraph: View {
                 pinchScale = 1.0
             }
     }
+    
+    func defaultStartupTask() {
+        let half = invertedScale(from: graphScale)
+        xDomain = (-half)...(half)
+        yDomain = (-half)...(half)
+        pinchBaseXDomain = xDomain
+        pinchBaseYDomain = yDomain
+    }
+}
+
+#Preview {
+    IntegralPlayground()
 }
