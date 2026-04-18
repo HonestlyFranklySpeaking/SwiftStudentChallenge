@@ -25,13 +25,16 @@ struct Series: Identifiable {
 }
 
 struct MathGraph: View {
+    
+    var graphHeight: CGFloat = 340
+    
     ///The actual scale for the graph
     @State private var graphScale: Double = 30
     
     @State var visibility = [true, false, false]
     
     ///Represents graphScale, xDomain, yDomain, pinchScale, pinchBaseXDomain, and pinchBaseYDomain default values in that order
-    let zoomDefaults: (Double, ClosedRange<Double>, ClosedRange<Double>, CGFloat, ClosedRange<Double>, ClosedRange<Double>) = (30, -30...30, -30...30, 1.0, -30...30, -30...30)
+    private let zoomDefaults: (Double, ClosedRange<Double>, ClosedRange<Double>, CGFloat, ClosedRange<Double>, ClosedRange<Double>) = (30, -30...30, -30...30, 1.0, -30...30, -30...30)
     
     @State private var xDomain: ClosedRange<Double> = -30...30
     @State private var yDomain: ClosedRange<Double> = -30...30
@@ -73,7 +76,7 @@ struct MathGraph: View {
     }
     
     var body: some View {
-        VStack {
+        ZStack(alignment: .topTrailing) {
             chartView
                 .chartForegroundStyleScale(mapping: { label in
                     currentMappings[label] ?? LinearGradient(colors: [.white, .white], startPoint: .leading, endPoint: .trailing)
@@ -98,21 +101,29 @@ struct MathGraph: View {
                 .chartYAxis {
                     Helpers.shared.axisMarks(for: invertedScale(from: graphScale), position: .leading)
                 }
-                .frame(height: 340)
-                .padding(.horizontal, 8)
+                .frame(height: graphHeight)
                 .gesture(dragGesture)
                 .gesture(magnificationGesture)
+
+            ZStack(alignment: .center) {
+                Circle()
+                    .frame(width: 30, height: 30, alignment: .center)
+                    .foregroundStyle(.clear)
+                    .glassEffect()
+                
+                Button {
+                    (graphScale, xDomain, yDomain, pinchScale, pinchBaseXDomain, pinchBaseYDomain) = zoomDefaults
+                    defaultStartupTask()
+                } label: {
+                    Image(systemName: "house")
+                }
+            }
+            .padding()
+
         }
+        .padding(.horizontal, 8)
         .task {
             defaultStartupTask()
-        }
-        .toolbar {
-            Button {
-                (graphScale, xDomain, yDomain, pinchScale, pinchBaseXDomain, pinchBaseYDomain) = zoomDefaults
-                defaultStartupTask()
-            } label: {
-                Image(systemName: "house")
-            }
         }
     }
     
@@ -226,5 +237,5 @@ struct MathGraph: View {
 }
 
 #Preview {
-    IntegralPlayground()
+    MathGraph(serieses: [])
 }

@@ -19,6 +19,7 @@
 	- BetterAutoDifferentiate.swift
 	- BetterAutoDifferentiate.swift
 	- MathGraph.swift
+        - Better visuals & proportions on iPad
 	- CalculusPlaygroundApp.swift
 	- RangeSlider.swift
 	- DerivativePlayground.swift
