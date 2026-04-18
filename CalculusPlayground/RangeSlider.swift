@@ -1,7 +1,7 @@
 import SwiftUI
 
 
-
+///Represents a range slider, with two nodes representing top and bottom. 
 struct RangeSliderModifier: ViewModifier {
     @Binding var range: ClosedRange<Double>
     var bounds: ClosedRange<Double>
@@ -95,5 +95,5 @@ struct RangeSliderTest: View {
 
 
 #Preview {
-    RangeSliderTest()
+    IntegralPlayground()
 }

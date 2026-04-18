@@ -8,6 +8,7 @@
 import SwiftUI
 import Charts
 
+///Represents a set of points, with associated label and type etc.
 struct Series: Identifiable {
     enum PlotType {
         case area
@@ -24,11 +25,12 @@ struct Series: Identifiable {
 }
 
 struct MathGraph: View {
+    ///The actual scale for the graph
     @State private var graphScale: Double = 30
     
     @State var visibility = [true, false, false]
     
-    //Represents graphScale, xDomain, yDomain, pinchScale, pinchBaseXDomain, and pinchBaseYDomain default values
+    ///Represents graphScale, xDomain, yDomain, pinchScale, pinchBaseXDomain, and pinchBaseYDomain default values in that order
     let zoomDefaults: (Double, ClosedRange<Double>, ClosedRange<Double>, CGFloat, ClosedRange<Double>, ClosedRange<Double>) = (30, -30...30, -30...30, 1.0, -30...30, -30...30)
     
     @State private var xDomain: ClosedRange<Double> = -30...30
@@ -37,6 +39,8 @@ struct MathGraph: View {
     var serieses: [Series]
     
     @State private var pinchScale: CGFloat = 1.0
+    
+    //These two represent the domains after last motion, as a basis for the next moment. It is updated after the end of every movement, rather than xDomain and yDomain, which are updated instantly.
     @State private var pinchBaseXDomain: ClosedRange<Double> = -30...30
     @State private var pinchBaseYDomain: ClosedRange<Double> = -30...30
     
@@ -211,7 +215,7 @@ struct MathGraph: View {
                 pinchScale = 1.0
             }
     }
-    
+    ///Task assigned to rescale graph
     func defaultStartupTask() {
         let half = invertedScale(from: graphScale)
         xDomain = (-half)...(half)
