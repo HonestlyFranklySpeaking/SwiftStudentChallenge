@@ -31,12 +31,12 @@ struct IntegralPlayground: View {
                     Series(points: integralPoints, label: "Integral"),
                     Series(points: secondIntegralPoints, label: "Second Integral")
                 ])
-                
+                Text(inputPoints.description)
                 Spacer()
-                Text("C1: \(c1)")
-                Slider(value: $c1, in: -5...5, step: 0.5, label: { Text("C1") })
-                Text("C2: \(c2)")
-                Slider(value: $c2, in: -5...5, step: 0.5, label: { Text("C2") })
+                Text("C0: \(String(format: "%.1f", c1))")
+                Slider(value: $c1, in: -10...10, step: 0.1, label: { Text("C0") })
+                Text("C1: \(String(format: "%.1f", c2))")
+                Slider(value: $c2, in: -10...10, step: 0.1, label: { Text("C1") })
                 
                 Text(debug)
             }
@@ -68,16 +68,16 @@ struct IntegralPlayground: View {
                         await update()
                     }
                 }
-                .onChange(of: c1) {_, _ in
+                .onChange(of: c1) {j, k in
                     Task {
                         //Starts at 1 because you don't have to regenerate og points
-                        await update(startAt: 1)
+                        await update(startAt: .one(start: j, end: k))
                     }
                 }
-                .onChange(of: c2) {_, _ in
+                .onChange(of: c2) {j, k in
                     Task {
                         //Starts at step 2 because only integral 2 is affected
-                        await update(startAt: 2)
+                        await update(startAt: .two(start: j, end: k))
                     }
                 }
 
@@ -95,18 +95,37 @@ struct IntegralPlayground: View {
         inputPoints = points
         print("\n Generated \(points.count) points for function \(f.id.uuidString.prefix(6)) \n")
     }
-    func update(startAt: Int = 0) async {
+    
+    enum updateStartAt: Equatable {
+        case zero
+        case one(start: Double, end: Double)
+        case two(start: Double, end: Double)
+    }
+    
+    func update(startAt: updateStartAt = .zero) async {
         done = false
-        if startAt == 0 {
+        if case .zero = startAt {
             await generateData()
             integralPoints = await generateIntegral(for: inputPoints)
-        }
-        if startAt < 2 {
-            for (num, i) in integralPoints.enumerated() { integralPoints[num].yv = i.yv+c1 }
+            for (i, point) in integralPoints.enumerated() { integralPoints[i].yv = point.yv+c1
+            }
             secondIntegralPoints = await generateIntegral(for: integralPoints)
+            for (i, point) in secondIntegralPoints.enumerated() { secondIntegralPoints[i].yv = point.yv+c2
+            }
+            
         }
-        if startAt < 3 {
-            for (num, i) in secondIntegralPoints.enumerated() { secondIntegralPoints[num].yv = i.yv+c1 }
+        if case let .one(start: j, end: k) = startAt {
+            for (i, _) in integralPoints.enumerated() {
+                integralPoints[i].yv += k - j
+            }
+            for (i, point) in secondIntegralPoints.enumerated() {
+                secondIntegralPoints[i].yv += (k - j) * point.xh
+            }
+        }
+        if case let .two(start: j, end: k) = startAt {
+            for (i, _) in secondIntegralPoints.enumerated() {
+                secondIntegralPoints[i].yv += k - j
+            }
         }
         done = true
     }

@@ -20,15 +20,15 @@ struct ReversibleRange {
     init(_ start: Double, _ end: Double) {
         if start > end {
             range = end ... start
+            isReverse = true
         } else {
             range = start ... end
-            isReverse = true
         }
     }
 }
 
 ///Represents a point on a graph, with xh and yv as x and y
-class GraphPoint: Identifiable {
+class GraphPoint: Identifiable, CustomStringConvertible {
     var id: UUID = UUID()
     ///x
     var xh: Double
@@ -39,6 +39,11 @@ class GraphPoint: Identifiable {
         self.xh = xh
         self.yv = yv
     }
+    
+    var description: String {
+        "(\(xh), \(yv))"
+    }
+    
 }
 ///Represents a mathematical function
 class Function: Identifiable, Hashable {
