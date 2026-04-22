@@ -31,7 +31,7 @@ struct RiemannSumPlayground: View {
                 ])
                 Spacer()
                 
-                Text(increment.description)
+                Text(String(format: "%.2f", increment))
                 
                 Slider(value: $increment, in: 0.005...1 as ClosedRange<Double>, step: 0.005) {
                     Text("Increment size")
@@ -45,7 +45,7 @@ struct RiemannSumPlayground: View {
                     .padding()
                 
                 
-                Text("\(range.lowerBound) - \(range.upperBound)")
+                Text("\(String(format: "%.1f", range.lowerBound)) - \(String(format: "%.1f", range.upperBound))")
                 Text(debug)
                 integralEquation
             }
