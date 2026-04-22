@@ -40,10 +40,17 @@ class GraphPoint: Identifiable, CustomStringConvertible {
         self.yv = yv
     }
     
+    func setX(_ x: Double) async {
+        self.xh = x
+    }
+    
+    func setY(_ y: Double) async {
+        self.yv = y
+    }
+    
     var description: String {
         "(\(xh), \(yv))"
     }
-    
 }
 ///Represents a mathematical function
 class Function: Identifiable, Hashable {
@@ -138,7 +145,7 @@ enum integralError: Error, LocalizedError {
 }
 
 
-func generateIntegral(for inputs: [GraphPoint]) async -> [GraphPoint] {
+nonisolated func generateIntegral(for inputs: [GraphPoint]) async -> [GraphPoint] {
     // Ensure we have at least two points to form a trapezoid
     guard inputs.count >= 2 else { return [] }
     
@@ -147,7 +154,7 @@ func generateIntegral(for inputs: [GraphPoint]) async -> [GraphPoint] {
     // Iterate through the points to calculate ∫ from 0 to n for all n
     for h in 0..<(inputs.count) {
         do {
-            try integralPoints.append(GraphPoint(xh: inputs[h].xh, yv: Double(await riemannSum(for: inputs, range: ReversibleRange(0, inputs[h].xh)).0)))
+            try await integralPoints.append(GraphPoint(xh: inputs[h].xh, yv: Double(await riemannSum(for: inputs, range: ReversibleRange(0, inputs[h].xh)).0)))
         } catch integralError.invalidRange {
             print("InvalidRange")
         } catch {
@@ -156,23 +163,30 @@ func generateIntegral(for inputs: [GraphPoint]) async -> [GraphPoint] {
     return integralPoints
 }
 
-func riemannSum(for inputs: [GraphPoint], range range_r: ReversibleRange) async throws -> (Double, [GraphPoint]) {
+nonisolated func riemannSum(for inputs: [GraphPoint], range range_r: ReversibleRange) async throws -> (Double, [GraphPoint]) {
     print("\n INTEGRAl: ")
     let range = range_r.range
-    let leftHand = inputs.filter({ $0.xh >= range.lowerBound && $0.xh < range.upperBound})
+    var isInRange = inputs.map() {_ in false}
+    for (i, point) in inputs.enumerated() {
+        if await (point.xh >= range.lowerBound) { if await (point.xh < range.upperBound) {
+            isInRange[i] = true
+        }}
+    }
+    
+    let leftHand = inputs.enumerated().filter() { isInRange[$0.0] }.map() { $0.1 }
     // prevents index out of range error
     guard leftHand.count > 2 else {
         return (0, [])
     }
     
-    let domain = inputs.first!.xh ... inputs.last!.xh
+    let domain = await inputs.first!.xh ... inputs.last!.xh
 
     guard domain.contains(range_r.range) else {
         throw integralError.invalidRange
     }
     
     
-    let h = leftHand[1].xh - leftHand[0].xh
+    let h = await leftHand[1].xh - leftHand[0].xh
     print("H: \(h)")
     
     var sum = 0.0
@@ -182,11 +196,11 @@ func riemannSum(for inputs: [GraphPoint], range range_r: ReversibleRange) async 
         
         
         
-        sum += (leftHandPoint.yv * h)
+        sum += ( await leftHandPoint.yv * h )
         
-        print("rect area: \(leftHandPoint.yv * h)")
-        rectangles.append(GraphPoint(xh: leftHandPoint.xh + h * 1/300, yv: leftHandPoint.yv))
-        rectangles.append(GraphPoint(xh: leftHandPoint.xh + h * 299/300, yv: leftHandPoint.yv))
+        print("rect area: \(await leftHandPoint.yv * h)")
+        await rectangles.append(GraphPoint(xh: leftHandPoint.xh + h * 1/300, yv: leftHandPoint.yv))
+        await rectangles.append(GraphPoint(xh: leftHandPoint.xh + h * 299/300, yv: leftHandPoint.yv))
         
     }
     
