@@ -32,9 +32,9 @@ struct IntegralPlayground: View {
                     Series(points: secondIntegralPoints, label: "Second Integral")
                 ])
                 Spacer()
-                Text("C0: \(String(format: "%.1f", c1))")
+                Text("\(Helpers.shared.makeScriptedString("C", script: "0", exponent: false)): \(String(format: "%.1f", c1))")
                 Slider(value: $c1, in: -10...10, step: 0.1, label: { Text("C0") })
-                Text("C1: \(String(format: "%.1f", c2))")
+                Text("\(Helpers.shared.makeScriptedString("C", script: "1", exponent: false)): \(String(format: "%.1f", c2))")
                 Slider(value: $c2, in: -10...10, step: 0.1, label: { Text("C1") })
                 
                 Text(debug)
@@ -42,9 +42,11 @@ struct IntegralPlayground: View {
             .navigationTitle("Integrals")
             .padding()
             .task {
+                done = false
                 await Task.detached(priority: .medium) {
                     await (inputPoints, integralPoints, secondIntegralPoints) = await update(function: function, points: (inputPoints, integralPoints, secondIntegralPoints))
                 }.value
+                done = true
             }
             .toolbar {
                 Image(systemName: done ? "checkmark.circle.fill" : "xmark.circle.fill")
@@ -66,25 +68,31 @@ struct IntegralPlayground: View {
                 }
                 .onChange(of: function) { _, _ in
                     Task {
+                        done = false
                         await Task.detached(priority: .medium) {
                             await (inputPoints, integralPoints, secondIntegralPoints) = await update(function: function, points: (inputPoints, integralPoints, secondIntegralPoints))
                         }.value
+                        done = true
                     }
                 }
                 .onChange(of: c1) {j, k in
                     Task {
                         //Starts at 1 because you don't have to regenerate og points or integral
+                        done = false
                         await Task.detached(priority: .medium) {
                             await (inputPoints, integralPoints, secondIntegralPoints) = await update(function: function, startAt: .one(start: j, end: k), points: (inputPoints, integralPoints, secondIntegralPoints))
                         }.value
+                        done = true
                     }
                 }
                 .onChange(of: c2) {j, k in
                     Task {
                         //Starts at step 2 because only integral 2 is affected
+                        done = false
                         await Task.detached(priority: .medium) {
                             await (inputPoints, integralPoints, secondIntegralPoints) = await update(function: function, startAt: .two(start: j, end: k), points: (inputPoints, integralPoints, secondIntegralPoints))
                         }.value
+                        done = true
                     }
                 }
             }
@@ -133,6 +141,7 @@ struct IntegralPlayground: View {
         }
         return (inputPoints, integralPoints, secondIntegralPoints)
     }
+
 }
 
 

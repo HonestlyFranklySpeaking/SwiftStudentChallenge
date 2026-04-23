@@ -51,6 +51,15 @@ class Helpers {
     }
     
     
+    func makeScriptedString(_ x: String, script: String, exponent: Bool, scriptFirst: Bool = false) -> AttributedString {
+        var first = AttributedString(x)
+        var second = AttributedString(script)
+        second.baselineOffset = exponent ? 4 : -4
+        second.font = .caption
+        scriptFirst ? second.append(first) : first.append(second)
+        return scriptFirst ? second : first
+    }
+    
     ///Computes Taylor Series from dot data, or uses cache
     func computeTaylorData(functionID: UUID,
                            degree: Int,
