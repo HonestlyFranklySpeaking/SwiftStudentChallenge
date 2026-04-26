@@ -41,12 +41,11 @@ struct IntegralPlayground: View {
                 await Task.detached(priority: .medium) {
                     let result = await update(function: function, points: (inputPoints, integralPoints, secondIntegralPoints), basePoints: (baseIntegralPoints, baseSecondIntegralPoints))
                 
-                    await (inputPoints, integralPoints, secondIntegralPoints) = result.0
+                    await setPoint((result.0.0, result.0.1, result.0.2, nil, nil))
                     if let baseIntPoints = result.1.0 {
-                        await setBaseIntegral(baseIntPoints)
-                    }
+                        await setPoint((nil, nil, nil, baseIntPoints, nil))                    }
                     if let secondBaseIntPoints = result.1.1 {
-                        await setSecondBaseIntegral(secondBaseIntPoints)
+                        await setPoint((nil, nil, nil, nil, secondBaseIntPoints))
                     }
                     
                 }.value
@@ -62,12 +61,11 @@ struct IntegralPlayground: View {
                 done = false
                 await Task.detached(priority: .medium) {
                     let result = await update(function: function, points: (inputPoints, integralPoints, secondIntegralPoints), basePoints: (baseIntegralPoints, baseSecondIntegralPoints))
-                    await (inputPoints, integralPoints, secondIntegralPoints) = result.0
+                    await setPoint((result.0.0, result.0.1, result.0.2, nil, nil))
                     if let baseIntPoints = result.1.0 {
-                        await setBaseIntegral(baseIntPoints)
-                    }
+                        await setPoint((nil, nil, nil, baseIntPoints, nil))                    }
                     if let secondBaseIntPoints = result.1.1 {
-                        await setSecondBaseIntegral(secondBaseIntPoints)
+                        await setPoint((nil, nil, nil, nil, secondBaseIntPoints))
                     }
                 }.value
                 done = true
@@ -81,13 +79,12 @@ struct IntegralPlayground: View {
                     let result = await update(function: function, startAt: .one, points: (inputPoints, integralPoints, secondIntegralPoints), basePoints: (baseIntegralPoints, baseSecondIntegralPoints))
                     
                 
-                    await (inputPoints, integralPoints, secondIntegralPoints) = result.0
-                    
+                    await setPoint((result.0.0, result.0.1, result.0.2, nil, nil))
+
                     if let baseIntPoints = result.1.0 {
-                        await setBaseIntegral(baseIntPoints)
-                    }
+                        await setPoint((nil, nil, nil, baseIntPoints, nil))                    }
                     if let secondBaseIntPoints = result.1.1 {
-                        await setSecondBaseIntegral(secondBaseIntPoints)
+                        await setPoint((nil, nil, nil, nil, secondBaseIntPoints))
                     }
                     
 
@@ -101,12 +98,14 @@ struct IntegralPlayground: View {
                 done = false
                 await Task.detached(priority: .medium) {
                     let result = await update(function: function, startAt: .two, points: (inputPoints, integralPoints, secondIntegralPoints), basePoints: (baseIntegralPoints, baseSecondIntegralPoints))
-                    await (inputPoints, integralPoints, secondIntegralPoints) = result.0
+                    
+                    await setPoint((result.0.0, result.0.1, result.0.2, nil, nil))
+                    
                     if let baseIntPoints = result.1.0 {
-                        await setBaseIntegral(baseIntPoints)
+                        await setPoint((nil, nil, nil, baseIntPoints, nil))
                     }
                     if let secondBaseIntPoints = result.1.1 {
-                        await setSecondBaseIntegral(secondBaseIntPoints)
+                        await setPoint((nil, nil, nil, nil, secondBaseIntPoints))
                     }
                 }.value
                 done = true
@@ -167,8 +166,14 @@ struct IntegralPlayground: View {
     }
     
     nonisolated func update(function: Function, startAt: updateStartAt = .zero, points: ([GraphPoint], [GraphPoint], [GraphPoint]), basePoints: ([GraphPoint], [GraphPoint])) async -> (([GraphPoint], [GraphPoint], [GraphPoint]), ([GraphPoint]?, [GraphPoint]?)) {
-        var (inputPoints, integralPoints, secondIntegralPoints) = points
-        var (baseIntegralPoints, baseSecondIntegralPoints) = basePoints
+        
+        var inputPoints = points.0
+        var integralPoints = points.1
+        var secondIntegralPoints = points.2
+        
+        var baseIntegralPoints = basePoints.0
+        var baseSecondIntegralPoints = basePoints.1
+        
         
         var resultBaseIntegralPoints: [GraphPoint]? = nil
         var resultBaseSecondIntegralPoints: [GraphPoint]? = nil
@@ -192,6 +197,10 @@ struct IntegralPlayground: View {
             
         }
         if case .one = startAt {
+            
+            integralPoints.append(integralPoints.popLast()!)
+            secondIntegralPoints.append(secondIntegralPoints.popLast()!)
+            
             for (i, point) in baseIntegralPoints.enumerated() {
                 await integralPoints[i].setY(point.yv + c1)
             }
@@ -200,19 +209,35 @@ struct IntegralPlayground: View {
             }
         }
         if case .two = startAt {
+            secondIntegralPoints.append(integralPoints.popLast()!)
+            
             for (i, point) in baseSecondIntegralPoints.enumerated() {
                 await secondIntegralPoints[i].setY(point.yv + c2)
             }
         }
+        
+        print("", terminator: "")
+        
         return ((inputPoints, integralPoints, secondIntegralPoints), (resultBaseIntegralPoints, resultBaseSecondIntegralPoints))
     }
     
-    func setBaseIntegral(_ points: [GraphPoint]) {
-        baseIntegralPoints = points
-    }
-    
-    func setSecondBaseIntegral(_ points: [GraphPoint]) {
-        baseSecondIntegralPoints = points
+    ///In order: inputPoints, integralPoints, 2ndIntegralPoints, baseIntegralPoints, secondBaseIntegralPoints
+    func setPoint(_ points: ([GraphPoint]?, [GraphPoint]?, [GraphPoint]?, [GraphPoint]?, [GraphPoint]?)) {
+        if let newInputPoints = points.0 {
+            inputPoints = newInputPoints
+        }
+        if let newIntegralPoints = points.1 {
+            integralPoints = newIntegralPoints
+        }
+        if let newSecondIntegralPoints = points.2 {
+            secondIntegralPoints = newSecondIntegralPoints
+        }
+        if let newBaseIntegralPoints = points.3 {
+            baseIntegralPoints = newBaseIntegralPoints
+        }
+        if let newBaseSecondIntegralPoints = points.4 {
+            baseSecondIntegralPoints = newBaseSecondIntegralPoints
+        }
     }
 
 }
