@@ -23,7 +23,7 @@ struct IntegralPlayground: View {
     
     
     @State var secondIntegralPoints: [GraphPoint] = []
-
+    
     @State var xDomain: ClosedRange<Double> = -30...30
     
     
@@ -33,40 +33,32 @@ struct IntegralPlayground: View {
     var body: some View {
         NavigationStack {
             internalVStack
-            .navigationTitle("Integrals")
-            .padding()
-            .task {
-                
-                done = false
-                await Task.detached(priority: .medium) {
-                    let result = await update(function: function, points: (inputPoints, integralPoints, secondIntegralPoints), basePoints: (baseIntegralPoints, baseSecondIntegralPoints))
-                
-                    await setPoint((result.0.0, result.0.1, result.0.2, nil, nil))
-                    if let baseIntPoints = result.1.0 {
-                        await setPoint((nil, nil, nil, baseIntPoints, nil))                    }
-                    if let secondBaseIntPoints = result.1.1 {
-                        await setPoint((nil, nil, nil, nil, secondBaseIntPoints))
-                    }
+                .navigationTitle("Integrals")
+                .padding()
+                .task {
                     
-                }.value
-                done = true
-            }
-            .toolbar {
-                Image(systemName: done ? "checkmark.circle.fill" : "xmark.circle.fill")
-                menu
-            }
+                    done = false
+                    await Task.detached(priority: .medium) {
+                        let result = await update(function: function, points: (inputPoints, integralPoints, secondIntegralPoints), basePoints: (baseIntegralPoints, baseSecondIntegralPoints))
+                        
+                        await setPoint(result)
+                        
+                    }.value
+                    done = true
+                }
+                .toolbar {
+                    Image(systemName: done ? "checkmark.circle.fill" : "xmark.circle.fill")
+                    menu
+                }
         }
         .onChange(of: function) { _, _ in
             Task {
                 done = false
                 await Task.detached(priority: .medium) {
                     let result = await update(function: function, points: (inputPoints, integralPoints, secondIntegralPoints), basePoints: (baseIntegralPoints, baseSecondIntegralPoints))
-                    await setPoint((result.0.0, result.0.1, result.0.2, nil, nil))
-                    if let baseIntPoints = result.1.0 {
-                        await setPoint((nil, nil, nil, baseIntPoints, nil))                    }
-                    if let secondBaseIntPoints = result.1.1 {
-                        await setPoint((nil, nil, nil, nil, secondBaseIntPoints))
-                    }
+                    
+                    await setPoint(result)
+                    
                 }.value
                 done = true
             }
@@ -76,18 +68,13 @@ struct IntegralPlayground: View {
                 //Starts at 1 because you don't have to regenerate og points or integral
                 done = false
                 await Task.detached(priority: .medium) {
-                    let result = await update(function: function, startAt: .one, points: (inputPoints, integralPoints, secondIntegralPoints), basePoints: (baseIntegralPoints, baseSecondIntegralPoints))
+                    let result = await update(function: function, startAt: .one(c0: c1, c1: c2), points: (inputPoints, integralPoints, secondIntegralPoints), basePoints: (baseIntegralPoints, baseSecondIntegralPoints))
                     
-                
-                    await setPoint((result.0.0, result.0.1, result.0.2, nil, nil))
-
-                    if let baseIntPoints = result.1.0 {
-                        await setPoint((nil, nil, nil, baseIntPoints, nil))                    }
-                    if let secondBaseIntPoints = result.1.1 {
-                        await setPoint((nil, nil, nil, nil, secondBaseIntPoints))
-                    }
+                    await setPoint(result)
                     
-
+                    
+                    
+                    
                 }.value
                 done = true
             }
@@ -97,16 +84,11 @@ struct IntegralPlayground: View {
                 //Starts at step 2 because only integral 2 is affected
                 done = false
                 await Task.detached(priority: .medium) {
-                    let result = await update(function: function, startAt: .two, points: (inputPoints, integralPoints, secondIntegralPoints), basePoints: (baseIntegralPoints, baseSecondIntegralPoints))
+                    let result = await update(function: function, startAt: .two(c0: c1, c1: c2), points: (inputPoints, integralPoints, secondIntegralPoints), basePoints: (baseIntegralPoints, baseSecondIntegralPoints))
                     
-                    await setPoint((result.0.0, result.0.1, result.0.2, nil, nil))
+                    await setPoint(result)
                     
-                    if let baseIntPoints = result.1.0 {
-                        await setPoint((nil, nil, nil, baseIntPoints, nil))
-                    }
-                    if let secondBaseIntPoints = result.1.1 {
-                        await setPoint((nil, nil, nil, nil, secondBaseIntPoints))
-                    }
+                    
                 }.value
                 done = true
             }
@@ -161,11 +143,11 @@ struct IntegralPlayground: View {
     
     enum updateStartAt: Equatable {
         case zero
-        case one
-        case two
+        case one(c0: Double, c1: Double)
+        case two(c0: Double, c1: Double)
     }
     
-    nonisolated func update(function: Function, startAt: updateStartAt = .zero, points: ([GraphPoint], [GraphPoint], [GraphPoint]), basePoints: ([GraphPoint], [GraphPoint])) async -> (([GraphPoint], [GraphPoint], [GraphPoint]), ([GraphPoint]?, [GraphPoint]?)) {
+    nonisolated func update(function: Function, startAt: updateStartAt = .zero, points: ([GraphPoint], [GraphPoint], [GraphPoint]), basePoints: ([GraphPoint], [GraphPoint])) async -> (([GraphPoint], [GraphPoint]?, [GraphPoint], [GraphPoint]?, [GraphPoint]?)) {
         
         var inputPoints = points.0
         var integralPoints = points.1
@@ -174,57 +156,62 @@ struct IntegralPlayground: View {
         var baseIntegralPoints = basePoints.0
         var baseSecondIntegralPoints = basePoints.1
         
-        
+        var resultIntegralPoints: [GraphPoint]? = nil
         var resultBaseIntegralPoints: [GraphPoint]? = nil
         var resultBaseSecondIntegralPoints: [GraphPoint]? = nil
+
         if case .zero = startAt {
+
             integralPoints = []
             secondIntegralPoints = []
             
             inputPoints = await generateData(function: function)
             baseIntegralPoints = await generateIntegral(for: inputPoints)
-            for (_, point) in baseIntegralPoints.enumerated() {
+            for point in baseIntegralPoints {
                 await integralPoints.append(GraphPoint(xh: point.xh, yv: point.yv+c1))
             }
             
             baseSecondIntegralPoints = await generateIntegral(for: baseIntegralPoints)
-            for (_, point) in baseSecondIntegralPoints.enumerated() {
+            for point in baseSecondIntegralPoints {
                 await secondIntegralPoints.append(GraphPoint(xh: point.xh, yv: point.yv+c2))
             }
             
             resultBaseIntegralPoints = baseIntegralPoints
             resultBaseSecondIntegralPoints = baseSecondIntegralPoints
+            resultIntegralPoints = integralPoints
             
         }
-        if case .one = startAt {
-            
-            integralPoints.append(integralPoints.popLast()!)
-            secondIntegralPoints.append(secondIntegralPoints.popLast()!)
-            
+        
+        //For .one and .two, it is intentional to use [i] as it makes swift dupe the array. Please do not modify
+        
+        if case .one(let C0, let C1) = startAt {
+
             for (i, point) in baseIntegralPoints.enumerated() {
-                await integralPoints[i].setY(point.yv + c1)
+                await integralPoints[i] = GraphPoint(xh: point.xh, yv: point.yv + C0)
+                
+                let secondPoint = baseSecondIntegralPoints[i]
+                
+                await secondIntegralPoints[i] = GraphPoint(xh: secondPoint.xh, yv: secondPoint.yv + C0 * secondPoint.xh + C1)
             }
-            for (i, point) in baseSecondIntegralPoints.enumerated() {
-                await secondIntegralPoints[i].setY(point.yv + c1 * point.xh + c2 )
-            }
+            
+            resultIntegralPoints = integralPoints
         }
-        if case .two = startAt {
-            secondIntegralPoints.append(integralPoints.popLast()!)
+        if case .two(let C0, let C1) = startAt {
             
             for (i, point) in baseSecondIntegralPoints.enumerated() {
-                await secondIntegralPoints[i].setY(point.yv + c2)
+                await secondIntegralPoints[i] = GraphPoint(xh: point.xh, yv: point.yv + C0 * point.xh + C1)
             }
+            
         }
         
-        print("", terminator: "")
         
-        return ((inputPoints, integralPoints, secondIntegralPoints), (resultBaseIntegralPoints, resultBaseSecondIntegralPoints))
+        return ((inputPoints, resultIntegralPoints, secondIntegralPoints, resultBaseIntegralPoints, resultBaseSecondIntegralPoints))
     }
     
     ///In order: inputPoints, integralPoints, 2ndIntegralPoints, baseIntegralPoints, secondBaseIntegralPoints
     func setPoint(_ points: ([GraphPoint]?, [GraphPoint]?, [GraphPoint]?, [GraphPoint]?, [GraphPoint]?)) {
         if let newInputPoints = points.0 {
-            inputPoints = newInputPoints
+            inputPoints = Array(newInputPoints[0...])
         }
         if let newIntegralPoints = points.1 {
             integralPoints = newIntegralPoints

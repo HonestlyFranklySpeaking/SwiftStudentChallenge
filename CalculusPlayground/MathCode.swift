@@ -35,23 +35,16 @@ class GraphPoint: Identifiable, CustomStringConvertible {
     ///y
     var yv: Double
     
-    init(xh: Double, yv: Double) {
+    nonisolated init(xh: Double, yv: Double) {
         self.xh = xh
         self.yv = yv
-    }
-    
-    func setX(_ x: Double) async {
-        self.xh = x
-    }
-    
-    func setY(_ y: Double) async {
-        self.yv = y
     }
     
     var description: String {
         "(\(xh), \(yv))"
     }
 }
+
 ///Represents a mathematical function
 class Function: Identifiable, Hashable {
     //To be expanded upon
