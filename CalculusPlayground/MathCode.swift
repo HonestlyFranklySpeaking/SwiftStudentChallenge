@@ -40,6 +40,11 @@ class GraphPoint: Identifiable, CustomStringConvertible {
         self.yv = yv
     }
     
+    nonisolated init (xh: Double, yv: Double, asynch: Void) async {
+        self.xh = xh
+        self.yv = yv
+    }
+    
     var description: String {
         "(\(xh), \(yv))"
     }
