@@ -10,6 +10,7 @@ import Charts
 
 struct IntegralPlayground: View {
     @State var done: Bool = false
+    @State var bigDone: Bool = false
     @State var c1: Double = 0
     @State var c2: Double = 0
     @State var function: Function = Function.sine
@@ -33,11 +34,13 @@ struct IntegralPlayground: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 12) {
-                MathGraph(serieses: [
+                if bigDone { MathGraph(serieses: [
                     Series(points: inputPoints, label: "Function"),
                     Series(points: integralPoints, label: "Integral"),
                     Series(points: secondIntegralPoints, label: "Second Integral")
-                ])
+                ]) } else {
+                    ProgressView()
+                }
                 Spacer()
                 Text("\(Helpers.shared.makeScriptedString("C", script: "0", exponent: false)): \(String(format: "%.1f", c1))")
                 Slider(value: $c1, in: -10...10, step: 0.2, label: { Text("C0") })
@@ -49,15 +52,16 @@ struct IntegralPlayground: View {
             .navigationTitle("Integrals")
             .padding()
             .task {
-                
+                bigDone = false
                 done = false
-                await Task.detached(priority: .high) {
+                await Task.detached(name: "Startup Update", priority: .high) {
                     let result = await update(function: function, points: (inputPoints, integralPoints, secondIntegralPoints), basePoints: (baseIntegralPoints, baseSecondIntegralPoints))
                     
                     await setPoint(result)
                     
                 }.value
                 done = true
+                bigDone = true
             }
             .toolbar {
                 Image(systemName: done ? "checkmark.circle.fill" : "xmark.circle.fill")
@@ -84,24 +88,28 @@ struct IntegralPlayground: View {
         .onChange(of: function) { _, _ in
             Task {
                 done = false
-                await Task.detached(priority: .high) {
+                bigDone = false
+                await Task.detached(name: "Change after func modification", priority: .high) {
                     let result = await update(function: function, points: (inputPoints, integralPoints, secondIntegralPoints), basePoints: (baseIntegralPoints, baseSecondIntegralPoints))
                     
                     await setPoint(result)
                     
                 }.value
                 done = true
+                bigDone = true
             }
         }
-        .onChange(of: c1) { _, _ in
+        .onChange(of: c1) { j, k in
             Task {
+                
+                
                 //Starts at 1 because you don't have to regenerate og points or integral
                 done = false
-                await Task.detached(priority: .high) {
+                await Task.detached(name: "Change after c1(0) modification", priority: .high) {
                     let result = await update(function: function, startAt: .one(c0: c1, c1: c2), points: (inputPoints, integralPoints, secondIntegralPoints), basePoints: (baseIntegralPoints, baseSecondIntegralPoints))
                     
                     await setPoint(result)
-
+                    
                 }.value
                 done = true
             }
@@ -110,7 +118,7 @@ struct IntegralPlayground: View {
             Task {
                 //Starts at step 2 because only integral 2 is affected
                 done = false
-                await Task.detached(priority: .high) {
+                await Task.detached(name: "Change after c1(2) modification", priority: .high) {
                     let result = await update(function: function, startAt: .two(c0: c1, c1: c2), points: (inputPoints, integralPoints, secondIntegralPoints), basePoints: (baseIntegralPoints, baseSecondIntegralPoints))
                     
                     await setPoint(result)
@@ -200,9 +208,9 @@ struct IntegralPlayground: View {
     }
     
     ///In order: inputPoints, integralPoints, 2ndIntegralPoints, baseIntegralPoints, secondBaseIntegralPoints
-    func setPoint(_ points: ([GraphPoint]?, [GraphPoint]?, [GraphPoint]?, [GraphPoint]?, [GraphPoint]?)) {
+    func setPoint(_ points: ([GraphPoint]?, [GraphPoint]?, [GraphPoint]?, [GraphPoint]?, [GraphPoint]?)) async {
         if let newInputPoints = points.0 {
-            inputPoints = Array(newInputPoints[0...])
+            inputPoints = newInputPoints
         }
         if let newIntegralPoints = points.1 {
             integralPoints = newIntegralPoints
@@ -217,7 +225,6 @@ struct IntegralPlayground: View {
             baseSecondIntegralPoints = newBaseSecondIntegralPoints
         }
     }
-    
 }
 
 
