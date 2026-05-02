@@ -30,69 +30,37 @@ struct IntegralPlayground: View {
     
     @State private var debug: String = ""
     
+    @State var lastUpdateDate: Date = Date.distantPast
     
     var body: some View {
         NavigationStack {
-            VStack(spacing: 12) {
-                if bigDone { MathGraph(serieses: [
-                    Series(points: inputPoints, label: "Function"),
-                    Series(points: integralPoints, label: "Integral"),
-                    Series(points: secondIntegralPoints, label: "Second Integral")
-                ]) } else {
-                    ProgressView()
-                }
-                Spacer()
-                Text("\(Helpers.shared.makeScriptedString("C", script: "0", exponent: false)): \(String(format: "%.1f", c1))")
-                Slider(value: $c1, in: -10...10, step: 0.2, label: { Text("C0") })
-                Text("\(Helpers.shared.makeScriptedString("C", script: "1", exponent: false)): \(String(format: "%.1f", c2))")
-                Slider(value: $c2, in: -10...10, step: 0.2, label: { Text("C1") })
+            internalVStack
+                .navigationTitle("Integrals")
+                .padding()
+        }
+        .task {
+            bigDone = false
+            done = false
+            await Task.detached(name: "Startup Update", priority: .high) {
                 
-                Text(debug)
-            }
-            .navigationTitle("Integrals")
-            .padding()
-            .task {
-                bigDone = false
-                done = false
-                await Task.detached(name: "Startup Update", priority: .high) {
-                    let result = await update(function: function, points: (inputPoints, integralPoints, secondIntegralPoints), basePoints: (baseIntegralPoints, baseSecondIntegralPoints))
-                    
-                    await setPoint(result)
-                    
-                }.value
-                done = true
-                bigDone = true
-            }
-            .toolbar {
-                Image(systemName: done ? "checkmark.circle.fill" : "xmark.circle.fill")
+                let startDate = Date()
+                let result = await update(function: function, points: (inputPoints, integralPoints, secondIntegralPoints), basePoints: (baseIntegralPoints, baseSecondIntegralPoints))
                 
-                Menu {
-                    Picker(selection: $function) {
-                        Text("Sine").tag(Function.sine)
-                        Text("Exponential").tag(Function.exp)
-                        Text("Square").tag(Function.square)
-                        Text("Natural Log").tag(Function.naturalLog)
-                        Text("Polynomial").tag(Function.humpy)
-                        Text("Inverse").tag(Function.inverse)
-                    } label: {
-                        Text("Functions")
-                    }
-                } label: {
-                    Image(systemName: "graph.2d")
-                        .frame(width: 36, height: 36)
-                        .background(Circle().fill(.purple))
-                }
+                await setPoint(result, date: startDate)
                 
-            }
+            }.value
+            done = true
+            bigDone = true
         }
         .onChange(of: function) { _, _ in
             Task {
                 done = false
                 bigDone = false
+                let startDate = Date()
                 await Task.detached(name: "Change after func modification", priority: .high) {
                     let result = await update(function: function, points: (inputPoints, integralPoints, secondIntegralPoints), basePoints: (baseIntegralPoints, baseSecondIntegralPoints))
                     
-                    await setPoint(result)
+                    await setPoint(result, date: startDate)
                     
                 }.value
                 done = true
@@ -105,10 +73,11 @@ struct IntegralPlayground: View {
                 
                 //Starts at 1 because you don't have to regenerate og points or integral
                 done = false
+                let startDate = Date()
                 await Task.detached(name: "Change after c1(0) modification", priority: .high) {
                     let result = await update(function: function, startAt: .one(c0: c1, c1: c2), points: (inputPoints, integralPoints, secondIntegralPoints), basePoints: (baseIntegralPoints, baseSecondIntegralPoints))
                     
-                    await setPoint(result)
+                    await setPoint(result, date: startDate)
                     
                 }.value
                 done = true
@@ -118,16 +87,60 @@ struct IntegralPlayground: View {
             Task {
                 //Starts at step 2 because only integral 2 is affected
                 done = false
+                let startDate = Date()
                 await Task.detached(name: "Change after c1(2) modification", priority: .high) {
                     let result = await update(function: function, startAt: .two(c0: c1, c1: c2), points: (inputPoints, integralPoints, secondIntegralPoints), basePoints: (baseIntegralPoints, baseSecondIntegralPoints))
                     
-                    await setPoint(result)
+                    await setPoint(result, date: startDate)
                     
                     
                 }.value
                 done = true
             }
         }
+        .toolbar {
+            Image(systemName: done ? "checkmark.circle.fill" : "xmark.circle.fill")
+            menu
+        }
+    }
+   
+    var menu: some View {
+        Menu {
+            Picker(selection: $function) {
+                Text("Sine").tag(Function.sine)
+                Text("Exponential").tag(Function.exp)
+                Text("Square").tag(Function.square)
+                Text("Natural Log").tag(Function.naturalLog)
+                Text("Polynomial").tag(Function.humpy)
+                Text("Inverse").tag(Function.inverse)
+            } label: {
+                Text("Functions")
+            }
+        } label: {
+            Image(systemName: "graph.2d")
+                .frame(width: 36, height: 36)
+                .background(Circle().fill(.purple))
+        }
+    }
+    
+    var internalVStack: some View {
+        VStack(spacing: 12) {
+            if bigDone { MathGraph(serieses: [
+                Series(points: inputPoints, label: "Function"),
+                Series(points: integralPoints, label: "Integral"),
+                Series(points: secondIntegralPoints, label: "Second Integral")
+            ]) } else {
+                ProgressView()
+            }
+            Spacer()
+            Text("\(Helpers.shared.makeScriptedString("C", script: "0", exponent: false)): \(String(format: "%.1f", c1))")
+            Slider(value: $c1, in: -10...10, step: 0.2, label: { Text("C0") })
+            Text("\(Helpers.shared.makeScriptedString("C", script: "1", exponent: false)): \(String(format: "%.1f", c2))")
+            Slider(value: $c2, in: -10...10, step: 0.2, label: { Text("C1") })
+            
+            Text(debug)
+        }
+        
     }
     
     nonisolated func generateData(function f: Function) async -> [GraphPoint] {
@@ -208,7 +221,14 @@ struct IntegralPlayground: View {
     }
     
     ///In order: inputPoints, integralPoints, 2ndIntegralPoints, baseIntegralPoints, secondBaseIntegralPoints
-    func setPoint(_ points: ([GraphPoint]?, [GraphPoint]?, [GraphPoint]?, [GraphPoint]?, [GraphPoint]?)) async {
+    func setPoint(_ points: ([GraphPoint]?, [GraphPoint]?, [GraphPoint]?, [GraphPoint]?, [GraphPoint]?), date: Date?) async {
+        
+        if let unwrappedDate = date {
+            if unwrappedDate < lastUpdateDate {
+                return
+            }
+        }
+        
         if let newInputPoints = points.0 {
             inputPoints = newInputPoints
         }
@@ -223,6 +243,10 @@ struct IntegralPlayground: View {
         }
         if let newBaseSecondIntegralPoints = points.4 {
             baseSecondIntegralPoints = newBaseSecondIntegralPoints
+        }
+        
+        if let unwrappedDate = date {
+            lastUpdateDate = unwrappedDate
         }
     }
 }
