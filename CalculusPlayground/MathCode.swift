@@ -149,6 +149,37 @@ struct TaylorSeriesResult {
     let centerX: Double
 }
 
+/// Compact cache payload: a Taylor polynomial is fully described by its
+/// coefficients and center. Display points are sampled on demand
+/// (`sampleTaylorPoints`) so cache entries stay tiny and prewarming never pays
+/// point-generation cost for centers that are never shown.
+struct CachedSeries: Sendable {
+    let coefficients: [Double]
+    let centerX: Double
+}
+
+/// Horner evaluation of a Taylor polynomial about `centerX`.
+func evaluateTaylor(coefficients: [Double], centerX: Double, at input: Double) -> Double {
+    let x = input - centerX
+    var sum = 0.0
+    for i in stride(from: coefficients.count - 1, through: 0, by: -1) {
+        sum = sum * x + coefficients[i]
+    }
+    return sum
+}
+
+/// Samples a cached polynomial into display points over [start, end].
+/// Matches the previous fixed ±80 / 800-step sampling exactly.
+func sampleTaylorPoints(_ cached: CachedSeries,
+                        start: Double = -80,
+                        end: Double = 80,
+                        count: Int = 800) -> [GraphPoint] {
+    let step = (end - start) / Double(count)
+    return stride(from: start, through: end, by: step).map { x in
+        GraphPoint(xh: x, yv: evaluateTaylor(coefficients: cached.coefficients, centerX: cached.centerX, at: x))
+    }
+}
+
 enum integralError: Error, LocalizedError {
     case invalidSum
     case invalidRange
@@ -250,25 +281,35 @@ func generateTaylorSeriesResult(for inputs: [GraphPoint], degree: Int, center: D
     guard !inputs.isEmpty else { throw SeriesGenerationError.insufficientData }
     guard (1...5).contains(degree) else { throw SeriesGenerationError.invalidDegree }
     
-    let sortedData = inputs.sorted { $0.xh < $1.xh }
-    
-    let tol = 11.0/20.0 * Helpers.shared.increment
-    func isClose(_ a: Double, _ b: Double) -> Bool { abs(a - b) <= tol }
-    func y(at targetX: Double) -> Double? {
-        sortedData.first(where: { isClose($0.xh, targetX) })?.yv
+    // Inputs come from makeInputs: finite samples on a regular grid (spacing =
+    // increment). Instead of re-sorting and linear-scanning for every value, key
+    // them by grid index for O(1) lookups — this dominates per-call cost now that
+    // prewarming computes coefficients without sampling points.
+    let step = Helpers.shared.increment
+    let tol = 11.0/20.0 * step
+    func gridIndex(_ x: Double) -> Int { Int((x / step).rounded()) }
+
+    var yByIndex = [Int: Double](minimumCapacity: inputs.count)
+    for p in inputs where p.yv.isFinite { yByIndex[gridIndex(p.xh)] = p.yv }
+    func y(at targetX: Double) -> Double? { yByIndex[gridIndex(targetX)] }
+
+    // The sampled point nearest the requested center is the expansion point.
+    guard let centerPoint = inputs.min(by: { abs($0.xh - center) < abs($1.xh - center) }),
+          abs(centerPoint.xh - center) <= tol else {
+        throw SeriesGenerationError.missingCenter
     }
-    
-    guard let f0 = y(at: center) else { throw SeriesGenerationError.missingCenter }
-    let centerX = (sortedData.first(where: { isClose($0.xh, center) })?.xh)!
-    
-    let positiveXs = sortedData.map { $0.xh }.filter { ($0 - centerX) > tol }
-    let symmetricPositives = positiveXs.sorted().filter { xp in
-        y(at: (2*centerX - xp)) != nil && y(at: xp) != nil
+    let centerX = centerPoint.xh
+    let f0 = centerPoint.yv
+
+    // Smallest positive offset whose mirror across centerX is also present.
+    var spacing: Double? = nil
+    for p in inputs {
+        let offset = p.xh - centerX
+        if offset > tol, y(at: centerX - offset) != nil {
+            if spacing == nil || offset < spacing! { spacing = offset }
+        }
     }
-    guard let firstPos = symmetricPositives.first else {
-        throw SeriesGenerationError.missingSymetricPoints
-    }
-    let h = firstPos - centerX
+    guard let h = spacing else { throw SeriesGenerationError.missingSymetricPoints }
     
     func hasPair(k: Int) -> Bool {
         let step = Double(k) * h
@@ -359,53 +400,49 @@ func generateTaylorSeriesDetached(for inputs: [GraphPoint], degree: Int, center:
 }
 
 // Caching data
+// The cached series is always sampled over a fixed ±80 domain (see
+// computeTaylorData / ensureTaylorPoints), so the sampling window carries no
+// information and must NOT be part of the key — otherwise the prewarmer and the
+// foreground lookup, which derived the window from different domains, produced
+// different keys and never shared a cache entry.
 nonisolated struct PlotKey: Hashable, Equatable {
     let functionID: UUID
     let degree: Int
     let centerBucket: Double
-    let xLowerBucket: Double
-    let xUpperBucket: Double
     let refined: Bool
-    
-    static func == (lhs: PlotKey, rhs: PlotKey) -> Bool {
-        lhs.functionID == rhs.functionID &&
-        lhs.degree == rhs.degree &&
-        lhs.centerBucket == rhs.centerBucket &&
-        lhs.xLowerBucket == rhs.xLowerBucket &&
-        lhs.xUpperBucket == rhs.xUpperBucket &&
-        lhs.refined == rhs.refined
-    }
-    
 }
 
 actor TaylorSeriesCache {
     static let shared = TaylorSeriesCache()
     
-    private var pointsCache: [PlotKey: Helpers.TaylorComputationData] = [:]
+    private var seriesCache: [PlotKey: CachedSeries] = [:]
     private var pointsLRU: [PlotKey] = []
-    private let cacheCapacity = 1600
-    
-    func getPoints(for key: PlotKey) -> Helpers.TaylorComputationData? {
-        if let v = pointsCache[key] {
+    // Entries are now ~6 coefficients each, so we can hold far more cheaply.
+    private let cacheCapacity = 20000
+
+    var count: Int { seriesCache.count }
+
+    func getSeries(for key: PlotKey) -> CachedSeries? {
+        if let v = seriesCache[key] {
             if let idx = pointsLRU.firstIndex(of: key) { pointsLRU.remove(at: idx) }
             pointsLRU.append(key)
             return v
         }
         return nil
     }
-    
-    func putPoints(_ data: Helpers.TaylorComputationData, for key: PlotKey) {
-        pointsCache[key] = data
+
+    func putSeries(_ data: CachedSeries, for key: PlotKey) {
+        seriesCache[key] = data
         if let idx = pointsLRU.firstIndex(of: key) { pointsLRU.remove(at: idx) }
         pointsLRU.append(key)
         while pointsLRU.count > cacheCapacity {
             let oldest = pointsLRU.removeFirst()
-            pointsCache.removeValue(forKey: oldest)
+            seriesCache.removeValue(forKey: oldest)
         }
     }
     
     private func keySummary(_ key: PlotKey) -> String {
-        "func:\(key.functionID.uuidString.prefix(6)) deg:\(key.degree) c:\(String(format: "%.2f", key.centerBucket)) x:[\(String(format: "%.1f", key.xLowerBucket)),\(String(format: "%.1f", key.xUpperBucket))] \(key.refined ? "R" : "C")"
+        "func:\(key.functionID.uuidString.prefix(6)) deg:\(key.degree) c:\(String(format: "%.2f", key.centerBucket)) \(key.refined ? "R" : "C")"
     }
 }
 

@@ -66,7 +66,7 @@ struct Expression: Identifiable, Hashable {
             return pow(b.transform(x), e.transform(x))
         }
         
-        self.directory = Component.power(e.directory, b.directory)
+        self.directory = Component.power(b.directory, e.directory)
     }
     
     // init from directory
@@ -115,24 +115,72 @@ struct Expression: Identifiable, Hashable {
 }
 
 
+/// Pretty-print a constant: integers drop the trailing `.0` (so we get
+/// `2 / x` rather than `2.0 / x^1.0`); non-integers print as-is.
+private func formatConstant(_ v: Double) -> String {
+    if v.isFinite, v == v.rounded(), abs(v) < 1e15 { return String(Int(v)) }
+    return "\(v)"
+}
+
+/// True for components that never need parentheses as an operand.
+private func isAtom(_ c: Component) -> Bool {
+    switch c {
+    case .variable, .constant, .ln, .sin, .cos: return true   // functions self-bracket their args
+    default: return false
+    }
+}
+
 func textify(_ component: Component) -> String {
+    // A power's base needs brackets unless it's atomic: (a+b)^2, but x^2.
+    func base(_ c: Component) -> String { isAtom(c) ? textify(c) : "(\(textify(c)))" }
+    // A multiplication operand only needs brackets when it's a sum.
+    func factor(_ c: Component) -> String { if case .sum = c { return "(\(textify(c)))" }; return textify(c) }
+    // A denominator needs brackets when it's a sum or a product.
+    func denom(_ c: Component) -> String {
+        switch c { case .sum, .product: return "(\(textify(c)))"; default: return textify(c) }
+    }
+
     switch component {
     case .variable:
         return "x"
     case .constant(let c):
-        return "\(c)"
+        return formatConstant(c)
     case .sum(let a1, let a2):
-        return "(\(textify(a1)) + \(textify(a2)))"
-    case .product(let f1, let f2):
-        return "(\(textify(f1)) * \(textify(f2)))"
+        return "\(textify(a1)) + \(textify(a2))"
+
+    case .product:
+        // Flatten, then split factors into a numerator and a denominator
+        // (the latter built from factors with a negative exponent).
+        var numerator: [Component] = []
+        var denominator: [Component] = []
+        for f in productFactors(component) {
+            if case .power(let b, .constant(let n)) = f, n < 0 {
+                denominator.append(n == -1 ? b : .power(b, .constant(-n)))
+            } else {
+                numerator.append(f)
+            }
+        }
+        let numStr = numerator.isEmpty ? "1" : numerator.map(factor).joined(separator: " * ")
+        if denominator.isEmpty { return numStr }
+        let denStr = denominator.count == 1
+            ? denom(denominator[0])
+            : "(" + denominator.map(factor).joined(separator: " * ") + ")"
+        return "\(numStr) / \(denStr)"
+
     case .power(let b, let e):
-        return "\(textify(b))^\(textify(e))"
+        // A lone negative power is a reciprocal: x^-1 -> 1 / x, x^-2 -> 1 / x^2.
+        if case .constant(let n) = e, n < 0 {
+            let d = n == -1 ? base(b) : "\(base(b))^\(formatConstant(-n))"
+            return "1 / \(d)"
+        }
+        return "\(base(b))^\(factor(e))"
+
     case .ln(let arg):
         return "ln(\(textify(arg)))"
     case .sin(let arg):
         return "sin(\(textify(arg)))"
     case .cos(let arg):
-        return "sin(\(textify(arg)))"
+        return "cos(\(textify(arg)))"
     }
 }
 
@@ -180,6 +228,207 @@ func differentiate(_ directory: Component) -> Component {
     }
 }
 
+/// Snaps a Double to the nearest integer if it's within `epsilon`.
+/// This is what turns `log(2.718) = 0.99989…` into `1`. It's a heuristic:
+/// raise epsilon to catch more "intended" integers, lower it to avoid
+/// corrupting genuine near-integer constants. Set epsilon to 0 to disable.
+private func foldConstant(_ value: Double, epsilon: Double) -> Double {
+    guard epsilon > 0, value.isFinite else { return value }
+    let rounded = value.rounded()
+    return abs(value - rounded) <= epsilon ? rounded : value
+}
+
+/// An order-insensitive, unambiguous string serialization of a Component.
+/// Used as a grouping/sorting key during simplification so that structurally
+/// identical sub-trees (e.g. the two `x`s in `x * x`) are recognised as equal
+/// and ordered deterministically. Kept separate from `textify` so that how we
+/// *canonicalize* never depends on how we *display*.
+private func structureKey(_ c: Component) -> String {
+    switch c {
+    case .variable:            return "x"
+    case .constant(let v):     return "c(\(v))"
+    case .sum(let a, let b):   return "S(\(structureKey(a)),\(structureKey(b)))"
+    case .product(let a, let b): return "P(\(structureKey(a)),\(structureKey(b)))"
+    case .power(let b, let e): return "W(\(structureKey(b)),\(structureKey(e)))"
+    case .ln(let a):           return "L(\(structureKey(a)))"
+    case .sin(let a):          return "N(\(structureKey(a)))"
+    case .cos(let a):          return "O(\(structureKey(a)))"
+    }
+}
+
+/// Flatten a (possibly nested) product into a flat list of factors.
+/// `(a * b) * c` and `a * (b * c)` both yield `[a, b, c]`.
+private func productFactors(_ c: Component) -> [Component] {
+    if case .product(let a, let b) = c { return productFactors(a) + productFactors(b) }
+    return [c]
+}
+
+/// Flatten a (possibly nested) sum into a flat list of terms.
+private func sumTerms(_ c: Component) -> [Component] {
+    if case .sum(let a, let b) = c { return sumTerms(a) + sumTerms(b) }
+    return [c]
+}
+
+/// View any factor as `base ^ exponent`. A bare `f` is treated as `f ^ 1`,
+/// which lets us combine `x` with `x^-1` by adding exponents.
+private func asPower(_ c: Component) -> (base: Component, exp: Component) {
+    if case .power(let b, let e) = c { return (b, e) }
+    return (c, .constant(1))
+}
+
+/// Algebraically simplifies a Component to a canonical form.
+///
+/// Beyond local identities (`*1`, `+0`, `^1`, `*0 -> 0`, `^0 -> 1`) and
+/// constant folding (`ln(2.718) -> 1`, `2 * 3 -> 6`), it canonicalizes whole
+/// products and sums:
+///  • products are flattened, then same-base factors are merged by adding
+///    exponents — so `x * x^-1 -> 1`, `x^2 * x^-1 -> x`, and numeric factors
+///    collapse into a single leading coefficient.
+///  • sums are flattened, then like terms are collected by adding coefficients
+///    — so `2*f + 3*f -> 5*f` and `f + f -> 2*f`.
+///
+/// It repeats until the tree stops changing, so cascading rewrites resolve
+/// fully (capped to guarantee termination even if a rule fails to be idempotent).
+///
+/// - Parameter epsilon: tolerance for snapping folded constants to integers.
+///   Defaults to 1e-3 so approximations of e (2.718) collapse cleanly. Pass 0
+///   for exact folding only.
+func simplify(_ component: Component, epsilon: Double = 1e-3) -> Component {
+    func fold(_ v: Double) -> Double { foldConstant(v, epsilon: epsilon) }
+
+    // f^0 = 1, f^1 = f, 1^f = 1, fold constant powers. base/exp are pre-simplified.
+    func simplifyPower(_ base: Component, _ exp: Component) -> Component {
+        switch (base, exp) {
+        case (_, .constant(0)):                       return .constant(1)
+        case (_, .constant(1)):                       return base
+        case (.constant(1), _):                       return .constant(1)
+        case (.constant(let bv), .constant(let ev)):  return .constant(fold(pow(bv, ev)))
+        default:                                      return .power(base, exp)
+        }
+    }
+
+    // Rebuild a left-associated product from an ordered factor list.
+    func makeProduct(_ factors: [Component]) -> Component {
+        guard let first = factors.first else { return .constant(1) }
+        return factors.dropFirst().reduce(first) { .product($0, $1) }
+    }
+
+    // Flatten a product, fold its numeric coefficient, and merge same-base factors.
+    func simplifyProduct(_ c: Component) -> Component {
+        var coeff = 1.0
+        // Ordered groups so output is deterministic; each holds a base + its exponents.
+        var groups: [(base: Component, key: String, exps: [Component])] = []
+
+        for raw in productFactors(c) {
+            // simp(raw) may itself be a product (e.g. a folded sum), so re-flatten.
+            for f in productFactors(simp(raw)) {
+                if case .constant(let v) = f { coeff *= v; continue }
+                let (base, exp) = asPower(f)
+                let key = structureKey(base)
+                if let i = groups.firstIndex(where: { $0.key == key }) {
+                    groups[i].exps.append(exp)
+                } else {
+                    groups.append((base, key, [exp]))
+                }
+            }
+        }
+
+        coeff = fold(coeff)
+        if coeff == 0 { return .constant(0) }
+
+        var built: [Component] = []
+        for g in groups {
+            let exponent = simp(makeSum(g.exps))      // add the collected exponents
+            let pw = simplifyPower(simp(g.base), exponent)
+            if case .constant(1) = pw { continue }    // base^0 etc. drops out
+            built.append(pw)
+        }
+        built.sort { structureKey($0) < structureKey($1) }
+
+        if built.isEmpty { return .constant(coeff) }
+        if coeff != 1 { built.insert(.constant(coeff), at: 0) }
+        return makeProduct(built)
+    }
+
+    // Rebuild a left-associated sum from an ordered term list.
+    func makeSum(_ terms: [Component]) -> Component {
+        guard let first = terms.first else { return .constant(0) }
+        return terms.dropFirst().reduce(first) { .sum($0, $1) }
+    }
+
+    // Flatten a sum, fold its numeric part, and collect like terms by coefficient.
+    func simplifySum(_ c: Component) -> Component {
+        var constant = 0.0
+        var groups: [(rest: Component, key: String, coeff: Double)] = []
+
+        for raw in sumTerms(c) {
+            for t in sumTerms(simp(raw)) {
+                // Split the term into a numeric coefficient and the rest.
+                var coeff = 1.0
+                var rest: [Component] = []
+                for f in productFactors(t) {
+                    if case .constant(let v) = f { coeff *= v } else { rest.append(f) }
+                }
+                if rest.isEmpty { constant += coeff; continue }
+                rest.sort { structureKey($0) < structureKey($1) }
+                let restC = makeProduct(rest)
+                let key = structureKey(restC)
+                if let i = groups.firstIndex(where: { $0.key == key }) {
+                    groups[i].coeff += coeff
+                } else {
+                    groups.append((restC, key, coeff))
+                }
+            }
+        }
+
+        var built: [Component] = []
+        for g in groups {
+            let co = fold(g.coeff)
+            if co == 0 { continue }
+            built.append(co == 1 ? g.rest : simp(.product(.constant(co), g.rest)))
+        }
+        built.sort { structureKey($0) < structureKey($1) }
+
+        constant = fold(constant)
+        if constant != 0 { built.append(.constant(constant)) }
+        if built.isEmpty { return .constant(0) }
+        return makeSum(built)
+    }
+
+    // One bottom-up pass: simplify children, then normalize at this node.
+    func simp(_ c: Component) -> Component {
+        switch c {
+        case .variable:        return c
+        case .constant(let v): return .constant(fold(v))
+        case .sum:             return simplifySum(c)
+        case .product:         return simplifyProduct(c)
+        case .power(let b, let e):
+            return simplifyPower(simp(b), simp(e))
+        case .ln(let arg):
+            let a = simp(arg)
+            if case .constant(let v) = a { return .constant(fold(log(v))) }
+            return .ln(a)
+        case .sin(let arg):
+            let a = simp(arg)
+            if case .constant(let v) = a { return .constant(fold(sin(v))) }
+            return .sin(a)
+        case .cos(let arg):
+            let a = simp(arg)
+            if case .constant(let v) = a { return .constant(fold(cos(v))) }
+            return .cos(a)
+        }
+    }
+
+    // Iterate to a fixed point; the cap guards against any non-idempotent rule.
+    var current = component
+    for _ in 0..<100 {
+        let next = simp(current)
+        if next == current { return next }   // relies on Component: Equatable
+        current = next
+    }
+    return current
+}
+
 struct BetterAutoDifferentiateDemoView: View {
     @State private var xValue: Double = 2.0
 
@@ -189,16 +438,18 @@ struct BetterAutoDifferentiateDemoView: View {
                 .font(.title).bold()
             
             // Let's try f(x) = x^x
-            let powx = Component.product(.sin(.variable), .constant(2))
+            let powx = Component.power(.product(.sin(.variable), .constant(3)), .constant(2))
             
             
             let expr = Expression("f(x)", directory: powx)
             let derivativeComponent = differentiate(expr.directory)
-            let derivativeExpr = Expression("f'(x)", directory: derivativeComponent)
-            
+            let simplifiedDerivative = simplify(derivativeComponent)
+            let derivativeExpr = Expression("f'(x)", directory: simplifiedDerivative)
+
             Group {
                 Text("Expression: f(x) = \(textify(expr.directory))")
                 Text("Derivative: f'(x) = \(textify(derivativeComponent))")
+                Text("Simplified: f'(x) = \(textify(simplifiedDerivative))")
                 HStack {
                     Text("x =")
                     Slider(value: $xValue, in: 0.01...10, step: 0.01)

@@ -69,39 +69,26 @@ class Helpers {
                            domain: ClosedRange<Double>,
                            inputs: [GraphPoint]) async throws -> TaylorComputationData {
         let centerBucket = bucket(center, step: Helpers.shared.increment)
-        let xLowerBucket = bucket(domain.lowerBound, step: 0.5)
-        let xUpperBucket = bucket(domain.upperBound, step: 0.5)
-        
+
         let key = PlotKey(functionID: functionID,
                           degree: degree,
                           centerBucket: centerBucket,
-                          xLowerBucket: xLowerBucket,
-                          xUpperBucket: xUpperBucket,
                           refined: true)
         
-        if let cached = await TaylorSeriesCache.shared.getPoints(for: key) {
-            print("CACHE USED for center=\(centerBucket) count:\(cached.points.count)")
-            return cached
-        } else {
-            print("CACHE MISS for center=\(centerBucket). Computing…")
+        // On a hit we only stored the polynomial; sample display points now.
+        if let cached = await TaylorSeriesCache.shared.getSeries(for: key) {
+            return TaylorComputationData(points: sampleTaylorPoints(cached),
+                                         coefficients: cached.coefficients,
+                                         centerX: cached.centerX)
         }
-        
+
         let seriesResult = try await generateTaylorSeriesResult(for: inputs, degree: degree, center: centerBucket)
-        
-        let start: Double = -80.0
-        let end: Double = 80.0
-        let step: Double = (end - start) / 800
-        let xs = Array(stride(from: start, through: end, by: step))
-        let points = xs.map { x in GraphPoint(xh: x, yv: seriesResult.series.transform(x)) }
-        
-        let full = TaylorComputationData(points: points,
-                                         coefficients: seriesResult.coefficients,
-                                         centerX: seriesResult.centerX)
-        
-        await TaylorSeriesCache.shared.putPoints(full, for: key)
-        
-        print("Successfully computed data for center=\(centerBucket)  count=\(points.count); appended to cache.")
-        return full
+        let cached = CachedSeries(coefficients: seriesResult.coefficients, centerX: seriesResult.centerX)
+        await TaylorSeriesCache.shared.putSeries(cached, for: key)
+
+        return TaylorComputationData(points: sampleTaylorPoints(cached),
+                                     coefficients: cached.coefficients,
+                                     centerX: cached.centerX)
     }
     
     ///Adds entry to cache if not already present there
@@ -113,26 +100,17 @@ class Helpers {
         let key = PlotKey(functionID: functionID,
                           degree: degree,
                           centerBucket: centerBucket,
-                          xLowerBucket: bucket(refinedDomain.lowerBound, step: 0.5),
-                          xUpperBucket: bucket(refinedDomain.upperBound, step: 0.5),
                           refined: true)
         
-        if let _ = await TaylorSeriesCache.shared.getPoints(for: key) {
+        if await TaylorSeriesCache.shared.getSeries(for: key) != nil {
             return
         }
         guard let series = try? await generateTaylorSeriesResult(for: inputs, degree: degree, center: centerBucket) else {
             return
         }
-        let start = refinedDomain.lowerBound
-        let end = refinedDomain.upperBound
-        let step = (end - start) / 800
-        let xs = Array(stride(from: start, through: end, by: step))
-        let pts = xs.map { x in GraphPoint(xh: x, yv: series.series.transform(x)) }
-        
-        let full = TaylorComputationData(points: pts,
-                                         coefficients: series.coefficients,
-                                         centerX: series.centerX)
-        await TaylorSeriesCache.shared.putPoints(full, for: key)
+        // Prewarming only computes & stores the polynomial — no point sampling.
+        await TaylorSeriesCache.shared.putSeries(
+            CachedSeries(coefficients: series.coefficients, centerX: series.centerX), for: key)
     }
     
     // MARK: - String/attributed formatting helpers

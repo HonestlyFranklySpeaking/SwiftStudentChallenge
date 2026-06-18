@@ -1,5 +1,5 @@
 //
-//  TaylorSeriesPlayground.swift
+//  TangentLinePlayground.swift
 //  CalculusPlaygroundsApplet
 //
 //  Created by Milo Ullman on 18/12/25.
@@ -53,24 +53,7 @@ struct TangentLinePlayground: View {
                 
                 Slider(value: $center, in: -10...10, step: Helpers.shared.increment, onEditingChanged: { editing in
                     if !editing {
-                        Task {
-                            currentRequestID &+= 1
-                            let requestID = currentRequestID
-                            do {
-                                let display = try await Helpers.shared.computeTaylorData(functionID: function.id, degree: 1, center: center, domain: xDomain, inputs: inputPoints)
-                                guard requestID == currentRequestID else { return }
-                                tangentLine = display.points
-                                displayedCoefficients = display.coefficients
-                                displayedCenter = display.centerX
-                                debug = ""
-                            } catch {
-                                guard requestID == currentRequestID else { return }
-                                tangentLine = []
-                                displayedCoefficients = []
-                                displayedCenter = nil
-                                debug = error.localizedDescription
-                            }
-                        }
+                        Task { await recompute() }
                     }
                 }
                 )
@@ -78,24 +61,7 @@ struct TangentLinePlayground: View {
                     let now = CACurrentMediaTime()
                     if now - lastPlotTime > Helpers.shared.maxUpdateFrequency {
                         lastPlotTime = now
-                        Task {
-                            currentRequestID &+= 1
-                            let requestID = currentRequestID
-                            do {
-                                let display = try await Helpers.shared.computeTaylorData(functionID: function.id, degree: 1, center: center, domain: xDomain, inputs: inputPoints)
-                                guard requestID == currentRequestID else { return }
-                                tangentLine = display.points
-                                displayedCoefficients = display.coefficients
-                                displayedCenter = display.centerX
-                                debug = ""
-                            } catch {
-                                guard requestID == currentRequestID else { return }
-                                tangentLine = []
-                                displayedCoefficients = []
-                                displayedCenter = nil
-                                debug = error.localizedDescription
-                            }
-                        }
+                        Task { await recompute() }
                     }
                 }
                 
@@ -106,46 +72,12 @@ struct TangentLinePlayground: View {
             .task {
                 await generateData()
                 
-                currentRequestID &+= 1
-                let requestID = currentRequestID
-                do {
-                    let display = try await Helpers.shared.computeTaylorData(functionID: function.id, degree: 1, center: center, domain: xDomain, inputs: inputPoints)
-                    if requestID == currentRequestID {
-                        tangentLine = display.points
-                        print("\n \n DEBUG!!!!!!!!!!!!!! taylor expansion points generated \n \n ")
-                        displayedCoefficients = display.coefficients
-                        displayedCenter = display.centerX
-                        debug = ""
-                    }
-                } catch {
-                    if requestID == currentRequestID {
-                        tangentLine = []
-                        displayedCoefficients = []
-                        displayedCenter = nil
-                        debug = error.localizedDescription
-                    }
-                }
+                await recompute()
             }
             .onChange(of: function) { _, _ in
                 Task {
                     await generateData()
-                    currentRequestID &+= 1
-                    let requestID = currentRequestID
-                    do {
-                        let display = try await Helpers.shared.computeTaylorData(functionID: function.id, degree: 1, center: center, domain: xDomain, inputs: inputPoints)
-                        
-                        guard requestID == currentRequestID else { return }
-                        tangentLine = display.points
-                        displayedCoefficients = display.coefficients
-                        displayedCenter = display.centerX
-                        debug = ""
-                    } catch {
-                        guard requestID == currentRequestID else { return }
-                        tangentLine = []
-                        displayedCoefficients = []
-                        displayedCenter = nil
-                        debug = error.localizedDescription
-                    }
+                    await recompute()
                 }
             }
             .toolbar {
@@ -167,6 +99,28 @@ struct TangentLinePlayground: View {
     
     
     
+    /// Recomputes the tangent line (degree-1 Taylor expansion) for the current
+    /// function/center and publishes it. Bumps `currentRequestID` first and
+    /// discards stale results so rapid slider changes can't clobber newer data.
+    func recompute() async {
+        currentRequestID &+= 1
+        let requestID = currentRequestID
+        do {
+            let display = try await Helpers.shared.computeTaylorData(functionID: function.id, degree: 1, center: center, domain: xDomain, inputs: inputPoints)
+            guard requestID == currentRequestID else { return }
+            tangentLine = display.points
+            displayedCoefficients = display.coefficients 
+            displayedCenter = display.centerX
+            debug = ""
+        } catch {
+            guard requestID == currentRequestID else { return }
+            tangentLine = []
+            displayedCoefficients = []
+            displayedCenter = nil
+            debug = error.localizedDescription
+        }
+    }
+
     func generateData() async {
         let f = function
         let range: ClosedRange<Double> = -30.0...30.0

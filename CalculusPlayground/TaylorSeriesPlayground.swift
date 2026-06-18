@@ -61,24 +61,7 @@ struct TaylorSeriesPlayground: View {
                     
                     Stepper("Number of Terms: \(degree)", value: $degree, in: 1...5)
                         .onChange(of: degree) {
-                            Task {
-                                currentRequestID &+= 1
-                                let requestID = currentRequestID
-                                do {
-                                    let display = try await Helpers.shared.computeTaylorData(functionID: function.id, degree: degree, center: center, domain: xDomain, inputs: inputPoints)
-                                    guard requestID == currentRequestID else { return }
-                                    taylorExpansionPoints = display.points
-                                    displayedCoefficients = display.coefficients
-                                    displayedCenter = display.centerX
-                                    debug = ""
-                                } catch {
-                                    guard requestID == currentRequestID else { return }
-                                    taylorExpansionPoints = []
-                                    displayedCoefficients = []
-                                    displayedCenter = nil
-                                    debug = error.localizedDescription
-                                }
-                            }
+                            Task { await recompute() }
                             restartPrewarmer()
                         }
                     
@@ -86,24 +69,7 @@ struct TaylorSeriesPlayground: View {
                     
                     Slider(value: $center, in: -10...10, step: Helpers.shared.increment, onEditingChanged: { editing in
                         if !editing {
-                            Task {
-                                currentRequestID &+= 1
-                                let requestID = currentRequestID
-                                do {
-                                    let display = try await Helpers.shared.computeTaylorData(functionID: function.id, degree: degree, center: center, domain: xDomain, inputs: inputPoints)
-                                    guard requestID == currentRequestID else { return }
-                                    taylorExpansionPoints = display.points
-                                    displayedCoefficients = display.coefficients
-                                    displayedCenter = display.centerX
-                                    debug = ""
-                                } catch {
-                                    guard requestID == currentRequestID else { return }
-                                    taylorExpansionPoints = []
-                                    displayedCoefficients = []
-                                    displayedCenter = nil
-                                    debug = error.localizedDescription
-                                }
-                            }
+                            Task { await recompute() }
                         }
                     }
                     )
@@ -111,24 +77,7 @@ struct TaylorSeriesPlayground: View {
                         let now = CACurrentMediaTime()
                         if now - lastPlotTime > Helpers.shared.maxUpdateFrequency {
                             lastPlotTime = now
-                            Task {
-                                currentRequestID &+= 1
-                                let requestID = currentRequestID
-                                do {
-                                    let display = try await Helpers.shared.computeTaylorData(functionID: function.id, degree: degree, center: center, domain: xDomain, inputs: inputPoints)
-                                    guard requestID == currentRequestID else { return }
-                                    taylorExpansionPoints = display.points
-                                    displayedCoefficients = display.coefficients
-                                    displayedCenter = display.centerX
-                                    debug = ""
-                                } catch {
-                                    guard requestID == currentRequestID else { return }
-                                    taylorExpansionPoints = []
-                                    displayedCoefficients = []
-                                    displayedCenter = nil
-                                    debug = error.localizedDescription
-                                }
-                            }
+                            Task { await recompute() }
                         }
                     }
                     
@@ -139,25 +88,7 @@ struct TaylorSeriesPlayground: View {
                 .task {
                     await generateData()
                     
-                    currentRequestID &+= 1
-                    let requestID = currentRequestID
-                    do {
-                        let display = try await Helpers.shared.computeTaylorData(functionID: function.id, degree: degree, center: center, domain: xDomain, inputs: inputPoints)
-                        if requestID == currentRequestID {
-                            taylorExpansionPoints = display.points
-                            print("\n \n DEBUG!!!!!!!!!!!!!! taylor expansion points generated \n \n ")
-                            displayedCoefficients = display.coefficients
-                            displayedCenter = display.centerX
-                            debug = ""
-                        }
-                    } catch {
-                        if requestID == currentRequestID {
-                            taylorExpansionPoints = []
-                            displayedCoefficients = []
-                            displayedCenter = nil
-                            debug = error.localizedDescription
-                        }
-                    }
+                    await recompute()
                     restartPrewarmer()
                 }
                 .onDisappear {
@@ -167,25 +98,12 @@ struct TaylorSeriesPlayground: View {
                 .onChange(of: function) { _, _ in
                     Task {
                         await generateData()
-                        currentRequestID &+= 1
-                        let requestID = currentRequestID
-                        do {
-                            let display = try await Helpers.shared.computeTaylorData(functionID: function.id, degree: degree,center: center, domain: xDomain, inputs: inputPoints)
-                            
-                            guard requestID == currentRequestID else { return }
-                            taylorExpansionPoints = display.points
-                            displayedCoefficients = display.coefficients
-                            displayedCenter = display.centerX
-                            debug = ""
-                        } catch {
-                            guard requestID == currentRequestID else { return }
-                            taylorExpansionPoints = []
-                            displayedCoefficients = []
-                            displayedCenter = nil
-                            debug = error.localizedDescription
-                        }
+                        await recompute()
+                        // Restart only after inputPoints reflect the new function,
+                        // otherwise the prewarmer caches the new function's key
+                        // using the previous function's sample points.
+                        restartPrewarmer()
                     }
-                    restartPrewarmer()
                 }
                 .toolbar {
                     ToolbarItem {
@@ -237,6 +155,28 @@ struct TaylorSeriesPlayground: View {
     
     
     
+    /// Recomputes the Taylor series for the current function/degree/center and
+    /// publishes it. Bumps `currentRequestID` first and discards stale results,
+    /// so rapid stepper/slider changes can't clobber newer data.
+    func recompute() async {
+        currentRequestID &+= 1
+        let requestID = currentRequestID
+        do {
+            let display = try await Helpers.shared.computeTaylorData(functionID: function.id, degree: degree, center: center, domain: xDomain, inputs: inputPoints)
+            guard requestID == currentRequestID else { return }
+            taylorExpansionPoints = display.points
+            displayedCoefficients = display.coefficients
+            displayedCenter = display.centerX
+            debug = ""
+        } catch {
+            guard requestID == currentRequestID else { return }
+            taylorExpansionPoints = []
+            displayedCoefficients = []
+            displayedCenter = nil
+            debug = error.localizedDescription
+        }
+    }
+
     func generateData() async {
         let f = function
         let range: ClosedRange<Double> = -30.0...30.0
