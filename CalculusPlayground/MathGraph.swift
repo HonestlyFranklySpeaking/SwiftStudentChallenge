@@ -88,7 +88,7 @@ struct MathGraph: View {
                     plotArea
                         .background {
                             ZStack {
-                                RoundedRectangle(cornerRadius: 30).fill(Helpers.shared.gradient)
+                                RoundedRectangle(cornerRadius: 30).fill(Helpers.shared.graphGradient)
                             }
                         }
                         .contentShape(Rectangle())

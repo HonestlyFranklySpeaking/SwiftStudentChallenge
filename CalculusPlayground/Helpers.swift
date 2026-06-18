@@ -20,7 +20,7 @@ class Helpers {
     let maxUpdateFrequency = 0.08
     
     ///Graph gradient
-    let gradient = MeshGradient(
+    let graphGradient = MeshGradient(
         width: 2,
         height: 2,
         points: [
@@ -30,6 +30,8 @@ class Helpers {
             .init(x: 0, y: 0)
         ],
         colors: [Color.yellow, Color.red, Color.mint, Color.yellow].map { $0.opacity(0.2) })
+    
+    let backgroundGradient = LinearGradient(colors: [Color.clear, Color.green, Color.blue].map { $0.opacity(0.2) }, startPoint: .top, endPoint: .bottom)
     
     func axisMarks(for scale: Double, position: AxisMarkPosition) -> AxisMarks<some AxisMark> {
         AxisMarks(position: position, values: .stride(by: max(1, scale / 4))) { value in

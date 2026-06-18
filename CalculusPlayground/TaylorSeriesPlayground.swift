@@ -39,192 +39,196 @@ struct TaylorSeriesPlayground: View {
     
     var body: some View {
         NavigationStack {
-            VStack(spacing: 12) {
-                MathGraph(serieses: [
-                    Series(points: inputPoints, label: "Function"),
-                    Series(points: taylorExpansionPoints, label: "Taylor Series")
-                ])
-                
-                Spacer()
-                
-                if let c = displayedCenter, !displayedCoefficients.isEmpty {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(Helpers.shared.attributedPolynomial(coeffs: displayedCoefficients, center: c))
-                            .font(.system(.body, design: .monospaced))
-                            .foregroundStyle(.secondary)
-                    }
-                    .frame(alignment: .leading)
-                }
-                
-                Stepper("Number of Terms: \(degree)", value: $degree, in: 1...5)
-                    .onChange(of: degree) {
-                        Task {
-                            currentRequestID &+= 1
-                            let requestID = currentRequestID
-                            do {
-                                let display = try await Helpers.shared.computeTaylorData(functionID: function.id, degree: degree, center: center, domain: xDomain, inputs: inputPoints)
-                                guard requestID == currentRequestID else { return }
-                                taylorExpansionPoints = display.points
-                                displayedCoefficients = display.coefficients
-                                displayedCenter = display.centerX
-                                debug = ""
-                            } catch {
-                                guard requestID == currentRequestID else { return }
-                                taylorExpansionPoints = []
-                                displayedCoefficients = []
-                                displayedCenter = nil
-                                debug = error.localizedDescription
-                            }
+            ZStack {
+                Helpers.shared.backgroundGradient
+                    .ignoresSafeArea()
+                VStack(spacing: 12) {
+                    MathGraph(serieses: [
+                        Series(points: inputPoints, label: "Function"),
+                        Series(points: taylorExpansionPoints, label: "Taylor Series")
+                    ])
+                    
+                    Spacer()
+                    
+                    if let c = displayedCenter, !displayedCoefficients.isEmpty {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(Helpers.shared.attributedPolynomial(coeffs: displayedCoefficients, center: c))
+                                .font(.system(.body, design: .monospaced))
+                                .foregroundStyle(.secondary)
                         }
-                        restartPrewarmer()
+                        .frame(alignment: .leading)
                     }
-                
-                Text("Center: \(Helpers.shared.fixedNumberString(center, fractionDigits: 2))")
-                
-                Slider(value: $center, in: -10...10, step: Helpers.shared.increment, onEditingChanged: { editing in
-                    if !editing {
-                        Task {
-                            currentRequestID &+= 1
-                            let requestID = currentRequestID
-                            do {
-                                let display = try await Helpers.shared.computeTaylorData(functionID: function.id, degree: degree, center: center, domain: xDomain, inputs: inputPoints)
-                                guard requestID == currentRequestID else { return }
-                                taylorExpansionPoints = display.points
-                                displayedCoefficients = display.coefficients
-                                displayedCenter = display.centerX
-                                debug = ""
-                            } catch {
-                                guard requestID == currentRequestID else { return }
-                                taylorExpansionPoints = []
-                                displayedCoefficients = []
-                                displayedCenter = nil
-                                debug = error.localizedDescription
+                    
+                    Stepper("Number of Terms: \(degree)", value: $degree, in: 1...5)
+                        .onChange(of: degree) {
+                            Task {
+                                currentRequestID &+= 1
+                                let requestID = currentRequestID
+                                do {
+                                    let display = try await Helpers.shared.computeTaylorData(functionID: function.id, degree: degree, center: center, domain: xDomain, inputs: inputPoints)
+                                    guard requestID == currentRequestID else { return }
+                                    taylorExpansionPoints = display.points
+                                    displayedCoefficients = display.coefficients
+                                    displayedCenter = display.centerX
+                                    debug = ""
+                                } catch {
+                                    guard requestID == currentRequestID else { return }
+                                    taylorExpansionPoints = []
+                                    displayedCoefficients = []
+                                    displayedCenter = nil
+                                    debug = error.localizedDescription
+                                }
                             }
+                            restartPrewarmer()
                         }
-                    }
-                }
-                )
-                .onChange(of: center) {
-                    let now = CACurrentMediaTime()
-                    if now - lastPlotTime > Helpers.shared.maxUpdateFrequency {
-                        lastPlotTime = now
-                        Task {
-                            currentRequestID &+= 1
-                            let requestID = currentRequestID
-                            do {
-                                let display = try await Helpers.shared.computeTaylorData(functionID: function.id, degree: degree, center: center, domain: xDomain, inputs: inputPoints)
-                                guard requestID == currentRequestID else { return }
-                                taylorExpansionPoints = display.points
-                                displayedCoefficients = display.coefficients
-                                displayedCenter = display.centerX
-                                debug = ""
-                            } catch {
-                                guard requestID == currentRequestID else { return }
-                                taylorExpansionPoints = []
-                                displayedCoefficients = []
-                                displayedCenter = nil
-                                debug = error.localizedDescription
+                    
+                    Text("Center: \(Helpers.shared.fixedNumberString(center, fractionDigits: 2))")
+                    
+                    Slider(value: $center, in: -10...10, step: Helpers.shared.increment, onEditingChanged: { editing in
+                        if !editing {
+                            Task {
+                                currentRequestID &+= 1
+                                let requestID = currentRequestID
+                                do {
+                                    let display = try await Helpers.shared.computeTaylorData(functionID: function.id, degree: degree, center: center, domain: xDomain, inputs: inputPoints)
+                                    guard requestID == currentRequestID else { return }
+                                    taylorExpansionPoints = display.points
+                                    displayedCoefficients = display.coefficients
+                                    displayedCenter = display.centerX
+                                    debug = ""
+                                } catch {
+                                    guard requestID == currentRequestID else { return }
+                                    taylorExpansionPoints = []
+                                    displayedCoefficients = []
+                                    displayedCenter = nil
+                                    debug = error.localizedDescription
+                                }
                             }
                         }
                     }
-                }
-                
-                Text(debug)
-            }
-            .navigationTitle("Taylor Series")
-            .padding()
-            .task {
-                await generateData()
-                
-                currentRequestID &+= 1
-                let requestID = currentRequestID
-                do {
-                    let display = try await Helpers.shared.computeTaylorData(functionID: function.id, degree: degree, center: center, domain: xDomain, inputs: inputPoints)
-                    if requestID == currentRequestID {
-                        taylorExpansionPoints = display.points
-                        print("\n \n DEBUG!!!!!!!!!!!!!! taylor expansion points generated \n \n ")
-                        displayedCoefficients = display.coefficients
-                        displayedCenter = display.centerX
-                        debug = ""
+                    )
+                    .onChange(of: center) {
+                        let now = CACurrentMediaTime()
+                        if now - lastPlotTime > Helpers.shared.maxUpdateFrequency {
+                            lastPlotTime = now
+                            Task {
+                                currentRequestID &+= 1
+                                let requestID = currentRequestID
+                                do {
+                                    let display = try await Helpers.shared.computeTaylorData(functionID: function.id, degree: degree, center: center, domain: xDomain, inputs: inputPoints)
+                                    guard requestID == currentRequestID else { return }
+                                    taylorExpansionPoints = display.points
+                                    displayedCoefficients = display.coefficients
+                                    displayedCenter = display.centerX
+                                    debug = ""
+                                } catch {
+                                    guard requestID == currentRequestID else { return }
+                                    taylorExpansionPoints = []
+                                    displayedCoefficients = []
+                                    displayedCenter = nil
+                                    debug = error.localizedDescription
+                                }
+                            }
+                        }
                     }
-                } catch {
-                    if requestID == currentRequestID {
-                        taylorExpansionPoints = []
-                        displayedCoefficients = []
-                        displayedCenter = nil
-                        debug = error.localizedDescription
-                    }
+                    
+                    Text(debug)
                 }
-                restartPrewarmer()
-            }
-            .onDisappear {
-                prewarmTask?.cancel()
-                prewarmTask = nil
-            }
-            .onChange(of: function) { _, _ in
-                Task {
+                .navigationTitle("Taylor Series")
+                .padding()
+                .task {
                     await generateData()
+                    
                     currentRequestID &+= 1
                     let requestID = currentRequestID
                     do {
-                        let display = try await Helpers.shared.computeTaylorData(functionID: function.id, degree: degree,center: center, domain: xDomain, inputs: inputPoints)
-                        
-                        guard requestID == currentRequestID else { return }
-                        taylorExpansionPoints = display.points
-                        displayedCoefficients = display.coefficients
-                        displayedCenter = display.centerX
-                        debug = ""
+                        let display = try await Helpers.shared.computeTaylorData(functionID: function.id, degree: degree, center: center, domain: xDomain, inputs: inputPoints)
+                        if requestID == currentRequestID {
+                            taylorExpansionPoints = display.points
+                            print("\n \n DEBUG!!!!!!!!!!!!!! taylor expansion points generated \n \n ")
+                            displayedCoefficients = display.coefficients
+                            displayedCenter = display.centerX
+                            debug = ""
+                        }
                     } catch {
-                        guard requestID == currentRequestID else { return }
-                        taylorExpansionPoints = []
-                        displayedCoefficients = []
-                        displayedCenter = nil
-                        debug = error.localizedDescription
+                        if requestID == currentRequestID {
+                            taylorExpansionPoints = []
+                            displayedCoefficients = []
+                            displayedCenter = nil
+                            debug = error.localizedDescription
+                        }
                     }
+                    restartPrewarmer()
                 }
-                restartPrewarmer()
-            }
-            .toolbar {
-                ToolbarItem {
-                    if cachingProgress < 252 {
-                        HStack {
-                            Text("Caching...")
-                                .foregroundColor(.secondary)
-                                .padding()
+                .onDisappear {
+                    prewarmTask?.cancel()
+                    prewarmTask = nil
+                }
+                .onChange(of: function) { _, _ in
+                    Task {
+                        await generateData()
+                        currentRequestID &+= 1
+                        let requestID = currentRequestID
+                        do {
+                            let display = try await Helpers.shared.computeTaylorData(functionID: function.id, degree: degree,center: center, domain: xDomain, inputs: inputPoints)
                             
-                            // The circular gauge
-                            Gauge(value: Double(cachingProgress), in: 0...252) {
-                                // Empty label, as we have a custom one in the HStack
+                            guard requestID == currentRequestID else { return }
+                            taylorExpansionPoints = display.points
+                            displayedCoefficients = display.coefficients
+                            displayedCenter = display.centerX
+                            debug = ""
+                        } catch {
+                            guard requestID == currentRequestID else { return }
+                            taylorExpansionPoints = []
+                            displayedCoefficients = []
+                            displayedCenter = nil
+                            debug = error.localizedDescription
+                        }
+                    }
+                    restartPrewarmer()
+                }
+                .toolbar {
+                    ToolbarItem {
+                        if cachingProgress < 252 {
+                            HStack {
+                                Text("Caching...")
+                                    .foregroundColor(.secondary)
+                                    .padding()
+                                
+                                // The circular gauge
+                                Gauge(value: Double(cachingProgress), in: 0...252) {
+                                    // Empty label, as we have a custom one in the HStack
+                                }
+                                .gaugeStyle(ToolbarGauge())
+                                .frame(width: 34, height: 34)
                             }
-                            .gaugeStyle(ToolbarGauge())
-                            .frame(width: 34, height: 34)
+                            .fixedSize()
+                        } else {
+                            Button {
+                                
+                            } label: {
+                                Image(systemName: "checkmark")
+                            }
+                            .tint(.green)
+                            .buttonStyle(.glassProminent)
                         }
-                        .fixedSize()
-                    } else {
+                    }
+                    
+                    
+                    ToolbarSpacer()
+                    
+                    
+                    ToolbarItem {
                         Button {
-                            
+                            showFunctionOptions.toggle()
                         } label: {
-                            Image(systemName: "checkmark")
+                            Image(systemName: "graph.2d")
                         }
-                        .tint(.green)
+                        .tint(.purple)
                         .buttonStyle(.glassProminent)
-                    }
-                }
-                
-                
-                ToolbarSpacer()
-                
-                
-                ToolbarItem {
-                    Button {
-                        showFunctionOptions.toggle()
-                    } label: {
-                        Image(systemName: "graph.2d")
-                    }
-                    .tint(.purple)
-                    .buttonStyle(.glassProminent)
-                    .popover(isPresented: $showFunctionOptions) {
-                        FunctionSelector(function: $function, showFunctionOptions: $showFunctionOptions)
+                        .popover(isPresented: $showFunctionOptions) {
+                            FunctionSelector(function: $function, showFunctionOptions: $showFunctionOptions)
+                        }
                     }
                 }
             }

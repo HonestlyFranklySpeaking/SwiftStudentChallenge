@@ -10,34 +10,46 @@ import SwiftUI
 struct HomeView: View {
     var body: some View {
         NavigationStack {
-            Form {
-                Section("Basics") {
-                    NavigationLink(destination: TangentLinePlayground()) {
-                        Text("Tangent Lines")
-                    }
-                    NavigationLink(destination: DerivativePlayground()) {
-                        Text("Derivatives")
-                    }
-                    NavigationLink(destination: RiemannSumPlayground()) {
-                        Text("Riemann Sums")
-                    }
-                    NavigationLink(destination: IntegralPlayground()) {
-                        Text("Integrals")
-                    }
-                }
+            ZStack {
+                Helpers.shared.backgroundGradient
+                    .ignoresSafeArea()
                 
-                
-                Section("Applied") {
-                    NavigationLink(destination: TaylorSeriesPlayground()) {
-                        Text("Taylor Series")
+                Form {
+                    Section("Basics") {
+                        Group {
+                            NavigationLink(destination: TangentLinePlayground()) {
+                                Text("Tangent Lines")
+                            }
+                            NavigationLink(destination: DerivativePlayground()) {
+                                Text("Derivatives")
+                            }
+                            NavigationLink(destination: RiemannSumPlayground()) {
+                                Text("Riemann Sums")
+                            }
+                            NavigationLink(destination: IntegralPlayground()) {
+                                Text("Integrals")
+                            }
+                        }
+                        .listRowBackground(Color.clear.background(.regularMaterial))
                     }
-                }
-                
-                Section("Abstract") {
                     
+                    
+                    Section("Applied") {
+                        Group {
+                            NavigationLink(destination: TaylorSeriesPlayground()) {
+                                Text("Taylor Series")
+                            }
+                        }
+                        .listRowBackground(Color.clear.background(.regularMaterial))
+                    }
+                    
+                    Section("Abstract") {
+                        
+                    }
                 }
+                .scrollContentBackground(.hidden)
+                .navigationTitle("Math Playgrounds")
             }
-            .navigationTitle("Math Playgrounds")
         }
         
     }
