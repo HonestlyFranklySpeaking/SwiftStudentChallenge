@@ -106,17 +106,23 @@ struct MathGraph: View {
                 .gesture(magnificationGesture)
 
             ZStack(alignment: .center) {
-                Circle()
-                    .frame(width: 30, height: 30, alignment: .center)
-                    .foregroundStyle(.clear)
-                    .glassEffect()
                 
                 Button {
-                    (graphScale, xDomain, yDomain, pinchScale, pinchBaseXDomain, pinchBaseYDomain) = zoomDefaults
-                    defaultStartupTask()
+                    withAnimation {
+                        (graphScale, xDomain, yDomain, pinchScale, pinchBaseXDomain, pinchBaseYDomain) = zoomDefaults
+                        defaultStartupTask()
+                    }
                 } label: {
                     Image(systemName: "house")
+                        .font(.title3)
+                        .padding(8)
+                        .background {
+                            Circle()
+                                .foregroundStyle(.tint.opacity(0.1))
+                                .glassEffect()
+                        }
                 }
+                .tint(.purple)
             }
             .padding()
 
