@@ -420,14 +420,29 @@ actor TaylorSeriesCache {
     // Entries are now ~6 coefficients each, so we can hold far more cheaply.
     private let cacheCapacity = 20000
 
+    // Foreground hit/miss stats (only computeTaylorData records these; the
+    // prewarmer uses `contains` so its existence checks don't skew the ratio).
+    private(set) var hits = 0
+    private(set) var misses = 0
+
     var count: Int { seriesCache.count }
 
+    struct Stats: Sendable { let hits: Int; let misses: Int; let entries: Int }
+    func stats() -> Stats { Stats(hits: hits, misses: misses, entries: seriesCache.count) }
+    func resetStats() { hits = 0; misses = 0 }
+
+    /// Existence check that does NOT affect hit/miss stats (used by prewarming).
+    func contains(_ key: PlotKey) -> Bool { seriesCache[key] != nil }
+
+    /// Foreground lookup: records a hit or miss and refreshes LRU on hit.
     func getSeries(for key: PlotKey) -> CachedSeries? {
         if let v = seriesCache[key] {
             if let idx = pointsLRU.firstIndex(of: key) { pointsLRU.remove(at: idx) }
             pointsLRU.append(key)
+            hits += 1
             return v
         }
+        misses += 1
         return nil
     }
 

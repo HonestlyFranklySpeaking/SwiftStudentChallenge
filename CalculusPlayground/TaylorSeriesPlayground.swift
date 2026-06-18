@@ -23,7 +23,9 @@ struct TaylorSeriesPlayground: View {
     @State private var showFunctionOptions: Bool = false
     
     @State private var debug: String = ""
-    
+
+    @State private var cacheStats: String = ""
+
     @State private var cachingProgress = 0
     
     @State private var lastPlotTime: TimeInterval = 0
@@ -82,6 +84,10 @@ struct TaylorSeriesPlayground: View {
                     }
                     
                     Text(debug)
+
+                    Text(cacheStats)
+                        .font(.system(.caption, design: .monospaced))
+                        .foregroundStyle(.secondary)
                 }
                 .navigationTitle("Taylor Series")
                 .padding()
@@ -168,13 +174,24 @@ struct TaylorSeriesPlayground: View {
             displayedCoefficients = display.coefficients
             displayedCenter = display.centerX
             debug = ""
+            await refreshCacheStats()
         } catch {
             guard requestID == currentRequestID else { return }
             taylorExpansionPoints = []
             displayedCoefficients = []
             displayedCenter = nil
             debug = error.localizedDescription
+            await refreshCacheStats()
         }
+    }
+
+    /// Pulls the latest hit/miss totals from the cache and formats them as a
+    /// "hits:misses (rate%) • entries" line for the on-screen indicator.
+    func refreshCacheStats() async {
+        let s = await TaylorSeriesCache.shared.stats()
+        let total = s.hits + s.misses
+        let rate = total == 0 ? 0 : Int((Double(s.hits) / Double(total) * 100).rounded())
+        cacheStats = "cache \(s.hits):\(s.misses) (\(rate)% hit) • \(s.entries) entries"
     }
 
     func generateData() async {

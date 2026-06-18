@@ -133,6 +133,34 @@ struct MathGraph: View {
         }
     }
     
+    /// Roughly how many points to draw per series. A phone-width chart can't
+    /// resolve more than a few hundred line segments, and the source arrays hold
+    /// up to ~800 points spanning ±80 while only the current domain is visible.
+    private let maxPointsPerSeries = 400
+
+    /// Clips a series to the visible x-range (plus a small margin so the line
+    /// reaches the plot edges) and strides it down to `maxPointsPerSeries`.
+    /// Source arrays are ascending in x, so a uniform stride preserves shape.
+    private func displayPoints(_ points: [GraphPoint]) -> [GraphPoint] {
+        guard !points.isEmpty else { return points }
+        let margin = (xDomain.upperBound - xDomain.lowerBound) * 0.05
+        let lo = xDomain.lowerBound - margin
+        let hi = xDomain.upperBound + margin
+        let visible = points.filter { $0.xh >= lo && $0.xh <= hi }
+        guard visible.count > maxPointsPerSeries else { return visible }
+
+        let step = visible.count / maxPointsPerSeries + 1
+        var result: [GraphPoint] = []
+        result.reserveCapacity(maxPointsPerSeries + 1)
+        var i = 0
+        while i < visible.count {
+            result.append(visible[i])
+            i += step
+        }
+        if let last = visible.last, result.last !== last { result.append(last) }
+        return result
+    }
+
     // Extracted chart content to reduce type-checking load
     private var chartView: some View {
         Chart {
@@ -143,23 +171,24 @@ struct MathGraph: View {
             RuleMark(y: .value("Origin Y", 0.0))
                 .foregroundStyle(Color.gray.opacity(0.6))
                 .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [6, 6]))
-            
+
             // Series lines
             ForEach(serieses) { series in
-                ForEach(series.points) { point in
+                let points = displayPoints(series.points)
+                ForEach(points.indices, id: \.self) { i in
                     if series.plottype == .area {
                         AreaMark(
-                            x: .value("X", point.xh),
-                            y: .value("Y", point.yv),
+                            x: .value("X", points[i].xh),
+                            y: .value("Y", points[i].yv),
                             series: .value("Line", series.label)
                         )
                         .interpolationMethod(.linear)
                     }
-                    
+
                     else if series.plottype == .line {
                         LineMark(
-                            x: .value("X", point.xh),
-                            y: .value("Y", point.yv),
+                            x: .value("X", points[i].xh),
+                            y: .value("Y", points[i].yv),
                             series: .value("Line", series.label)
                         )
                         .interpolationMethod(.linear)

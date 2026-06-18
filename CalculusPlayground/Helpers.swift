@@ -102,7 +102,7 @@ class Helpers {
                           centerBucket: centerBucket,
                           refined: true)
         
-        if await TaylorSeriesCache.shared.getSeries(for: key) != nil {
+        if await TaylorSeriesCache.shared.contains(key) {
             return
         }
         guard let series = try? await generateTaylorSeriesResult(for: inputs, degree: degree, center: centerBucket) else {
