@@ -52,6 +52,16 @@ class GraphPoint: Identifiable, CustomStringConvertible {
 
 ///Represents a mathematical function
 class Function: Identifiable, Hashable {
+    static var functionDictionary: [Function: String] = [
+        identity: "Identity",
+        sine: "Sine",
+        square: "Square",
+        inverse: "Inverse",
+        exp: "Exponential",
+        naturalLog: "Natural Log",
+        humpy: "Polynomial"
+    ]
+    
     //To be expanded upon
     
     nonisolated let id: UUID = UUID()
@@ -63,6 +73,8 @@ class Function: Identifiable, Hashable {
         self.transform = transform
         self.mathText = text
     }
+    
+    static var allFunctions: [Function] = [.exp, .sine, .square, .inverse, .identity, .naturalLog, .humpy]
     
     static let identity: Function = .init(transform: { $0 }, text: "x")
     static let sine: Function = .init(transform: { sin($0) }, text: "sin(x)")

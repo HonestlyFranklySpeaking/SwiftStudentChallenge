@@ -20,6 +20,8 @@ struct TaylorSeriesPlayground: View {
     @State var degree: Int = 5
     @State var center: Double = 6.7
     
+    @State private var showFunctionOptions: Bool = false
+    
     @State private var debug: String = ""
     
     @State private var cachingProgress = 0
@@ -159,8 +161,30 @@ struct TaylorSeriesPlayground: View {
                 prewarmTask?.cancel()
                 prewarmTask = nil
             }
+            .onChange(of: function) { _, _ in
+                Task {
+                    await generateData()
+                    currentRequestID &+= 1
+                    let requestID = currentRequestID
+                    do {
+                        let display = try await Helpers.shared.computeTaylorData(functionID: function.id, degree: degree,center: center, domain: xDomain, inputs: inputPoints)
+                        
+                        guard requestID == currentRequestID else { return }
+                        taylorExpansionPoints = display.points
+                        displayedCoefficients = display.coefficients
+                        displayedCenter = display.centerX
+                        debug = ""
+                    } catch {
+                        guard requestID == currentRequestID else { return }
+                        taylorExpansionPoints = []
+                        displayedCoefficients = []
+                        displayedCenter = nil
+                        debug = error.localizedDescription
+                    }
+                }
+                restartPrewarmer()
+            }
             .toolbar {
-                
                 ToolbarItem {
                     if cachingProgress < 252 {
                         HStack {
@@ -177,51 +201,30 @@ struct TaylorSeriesPlayground: View {
                         }
                         .fixedSize()
                     } else {
-                        Image(systemName: "checkmark.circle.fill")
-                            .foregroundStyle(.green)
-                        
+                        Button {
+                            
+                        } label: {
+                            Image(systemName: "checkmark")
+                        }
+                        .tint(.green)
+                        .buttonStyle(.glassProminent)
                     }
                 }
                 
-              ToolbarSpacer()
+                
+                ToolbarSpacer()
+                
                 
                 ToolbarItem {
-                    Menu {
-                        Picker(selection: $function) {
-                            Text("Sine").tag(Function.sine)
-                            Text("Exponential").tag(Function.exp)
-                            Text("Square").tag(Function.square)
-                            Text("Natural Log").tag(Function.naturalLog)
-                            Text("Polynomial").tag(Function.humpy)
-                            Text("Inverse").tag(Function.inverse)
-                        } label: {
-                            Text("Functions")
-                        }
+                    Button {
+                        showFunctionOptions.toggle()
                     } label: {
                         Image(systemName: "graph.2d")
                     }
-                    .onChange(of: function) { _, _ in
-                        Task {
-                            await generateData()
-                            currentRequestID &+= 1
-                            let requestID = currentRequestID
-                            do {
-                                let display = try await Helpers.shared.computeTaylorData(functionID: function.id, degree: degree,center: center, domain: xDomain, inputs: inputPoints)
-                                
-                                guard requestID == currentRequestID else { return }
-                                taylorExpansionPoints = display.points
-                                displayedCoefficients = display.coefficients
-                                displayedCenter = display.centerX
-                                debug = ""
-                            } catch {
-                                guard requestID == currentRequestID else { return }
-                                taylorExpansionPoints = []
-                                displayedCoefficients = []
-                                displayedCenter = nil
-                                debug = error.localizedDescription
-                            }
-                        }
-                        restartPrewarmer()
+                    .tint(.purple)
+                    .buttonStyle(.glassProminent)
+                    .popover(isPresented: $showFunctionOptions) {
+                        FunctionSelector(function: $function, showFunctionOptions: $showFunctionOptions)
                     }
                 }
             }

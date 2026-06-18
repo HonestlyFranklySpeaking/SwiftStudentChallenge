@@ -20,6 +20,7 @@ struct TangentLinePlayground: View {
     
     @State private var debug: String = ""
     
+    @State private var showFunctionOptions: Bool = false
     
     @State private var lastPlotTime: TimeInterval = 0
     
@@ -125,43 +126,39 @@ struct TangentLinePlayground: View {
                     }
                 }
             }
-            .toolbar {
-                Menu {
-                    Picker(selection: $function) {
-                        Text("Sine").tag(Function.sine)
-                        Text("Exponential").tag(Function.exp)
-                        Text("Square").tag(Function.square)
-                        Text("Natural Log").tag(Function.naturalLog)
-                        Text("Polynomial").tag(Function.humpy)
-                        Text("Inverse").tag(Function.inverse)
-                    } label: {
-                        Text("Functions")
+            .onChange(of: function) { _, _ in
+                Task {
+                    await generateData()
+                    currentRequestID &+= 1
+                    let requestID = currentRequestID
+                    do {
+                        let display = try await Helpers.shared.computeTaylorData(functionID: function.id, degree: 1, center: center, domain: xDomain, inputs: inputPoints)
+                        
+                        guard requestID == currentRequestID else { return }
+                        tangentLine = display.points
+                        displayedCoefficients = display.coefficients
+                        displayedCenter = display.centerX
+                        debug = ""
+                    } catch {
+                        guard requestID == currentRequestID else { return }
+                        tangentLine = []
+                        displayedCoefficients = []
+                        displayedCenter = nil
+                        debug = error.localizedDescription
                     }
-                } label: {
-                    Image(systemName: "graph.2d")
-                        .frame(width: 36, height: 36)
-                        .background(Circle().fill(.purple))
                 }
-                .onChange(of: function) { _, _ in
-                    Task {
-                        await generateData()
-                        currentRequestID &+= 1
-                        let requestID = currentRequestID
-                        do {
-                            let display = try await Helpers.shared.computeTaylorData(functionID: function.id, degree: 1, center: center, domain: xDomain, inputs: inputPoints)
-                            
-                            guard requestID == currentRequestID else { return }
-                            tangentLine = display.points
-                            displayedCoefficients = display.coefficients
-                            displayedCenter = display.centerX
-                            debug = ""
-                        } catch {
-                            guard requestID == currentRequestID else { return }
-                            tangentLine = []
-                            displayedCoefficients = []
-                            displayedCenter = nil
-                            debug = error.localizedDescription
-                        }
+            }
+            .toolbar {
+                ToolbarItem {
+                    Button {
+                        showFunctionOptions.toggle()
+                    } label: {
+                        Image(systemName: "graph.2d")
+                    }
+                    .tint(.purple)
+                    .buttonStyle(.glassProminent)
+                    .popover(isPresented: $showFunctionOptions) {
+                        FunctionSelector(function: $function, showFunctionOptions: $showFunctionOptions)
                     }
                 }
             }

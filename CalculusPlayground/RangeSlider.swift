@@ -16,7 +16,7 @@ struct RangeSliderModifier: ViewModifier {
                 
                 // The Active Range Highlight
                 Capsule()
-                    .fill(Color.purple.opacity(0.4))
+                    .fill(Color.purple.opacity(1))
                     .glassEffect()
                     .frame(width: CGFloat((range.upperBound - range.lowerBound) / (bounds.upperBound - bounds.lowerBound)) * geometry.size.width + 30, height: 30)
                     .offset(x: CGFloat((range.lowerBound - bounds.lowerBound) / (bounds.upperBound - bounds.lowerBound)) * geometry.size.width - 15)
@@ -95,5 +95,5 @@ struct RangeSliderTest: View {
 
 
 #Preview {
-    IntegralPlayground()
+    RangeSliderTest()
 }

@@ -17,6 +17,8 @@ struct DerivativePlayground: View {
     @State var secondDerivativePoints: [GraphPoint] = []
     @State var xDomain: ClosedRange<Double> = -30...30
     
+    @State var showFunctionOptions: Bool = false
+    
     
     @State private var debug: String = ""
     
@@ -46,35 +48,31 @@ struct DerivativePlayground: View {
                     print(error.localizedDescription)
                 }
             }
-            .toolbar {
-                Menu {
-                    Picker(selection: $function) {
-                        Text("Sine").tag(Function.sine)
-                        Text("Exponential").tag(Function.exp)
-                        Text("Square").tag(Function.square)
-                        Text("Natural Log").tag(Function.naturalLog)
-                        Text("Polynomial").tag(Function.humpy)
-                        Text("Inverse").tag(Function.inverse)
-                    } label: {
-                        Text("Functions")
-                    }
-                } label: {
-                    Image(systemName: "graph.2d")
-                        .frame(width: 36, height: 36)
-                        .background(Circle().fill(.purple))
-                }
-                .onChange(of: function) { _, _ in
-                    Task {
-                        await generateData()
-                        
-                        do {
-                            derivativePoints = try await mapDerivative(for: inputPoints)
-                            secondDerivativePoints = try await mapDerivative(for: derivativePoints)
-                        } catch {
-                            print(error.localizedDescription)
-                        }
-                    }
+            .onChange(of: function) { _, _ in
+                Task {
+                    await generateData()
                     
+                    do {
+                        derivativePoints = try await mapDerivative(for: inputPoints)
+                        secondDerivativePoints = try await mapDerivative(for: derivativePoints)
+                    } catch {
+                        print(error.localizedDescription)
+                    }
+                }
+                
+            }
+            .toolbar {
+                ToolbarItem {
+                    Button {
+                        showFunctionOptions.toggle()
+                    } label: {
+                        Image(systemName: "graph.2d")
+                    }
+                    .tint(.purple)
+                    .buttonStyle(.glassProminent)
+                    .popover(isPresented: $showFunctionOptions) {
+                        FunctionSelector(function: $function, showFunctionOptions: $showFunctionOptions)
+                    }
                 }
             }
         }

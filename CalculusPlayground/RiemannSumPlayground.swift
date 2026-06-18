@@ -14,6 +14,8 @@ struct RiemannSumPlayground: View {
     
     let visualIncrement: Double = 0.05
     
+    @State var showFunctionOptions: Bool = false
+    
     @State var function: Function = Function.sine
     @State var inputPoints: [GraphPoint] = []
     @State var xDomain: ClosedRange<Double> = -30...30
@@ -54,7 +56,20 @@ struct RiemannSumPlayground: View {
             .task {
                 await update()
             }
-            .toolbar { menu }
+            .toolbar {
+                ToolbarItem {
+                    Button {
+                        showFunctionOptions.toggle()
+                    } label: {
+                        Image(systemName: "graph.2d")
+                    }
+                    .tint(.purple)
+                    .buttonStyle(.glassProminent)
+                    .popover(isPresented: $showFunctionOptions) {
+                        FunctionSelector(function: $function, showFunctionOptions: $showFunctionOptions)
+                    }
+                }
+            }
         }
         .onChange(of: range) {
             Task {
@@ -95,23 +110,6 @@ struct RiemannSumPlayground: View {
         
     }
     
-    
-    var menu: some View {
-        Menu {
-            Picker(selection: $function) {
-                Text("Sine").tag(Function.sine)
-                Text("Exponential").tag(Function.exp)
-                Text("Square").tag(Function.square)
-                Text("Natural Log").tag(Function.naturalLog)
-                Text("Polynomial").tag(Function.humpy)
-                Text("Inverse").tag(Function.inverse)
-            } label: {
-                Text("Functions")
-            }
-        } label: {
-            Image(systemName: "graph.2d")
-        }
-    }
     var integralEquation: some View {
         HStack {
             HStack(spacing: 0.5) {
