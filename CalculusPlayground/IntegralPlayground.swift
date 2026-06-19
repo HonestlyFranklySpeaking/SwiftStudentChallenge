@@ -53,13 +53,13 @@ struct IntegralPlayground: View {
         }
         .onChange(of: c1) { j, k in
             Task {
-                await plotData(startAt: .two(c0: c1, c1: c2))
+                await plotData(startAt: .one(c0: c1, c1: c2))
             }
         }
         .onChange(of: c2) { _, _ in
             Task {
                 //Starts at step 2 because only integral 2 is affected
-                await plotData(startAt: .one(c0: c1, c1: c2))
+                await plotData(startAt: .two(c0: c1, c1: c2))
             }
             
         }
@@ -84,7 +84,7 @@ struct IntegralPlayground: View {
             if bigDone { MathGraph(serieses: [
                 Series(points: inputPoints, label: "Function"),
                 Series(points: integralPoints, label: "Integral"),
-                Series(points: secondIntegralPoints, label: "Second Integral")
+                Series(points: secondIntegralPoints, label: "Second Integral"),
             ]) } else {
                 ProgressView()
             }
@@ -168,6 +168,7 @@ struct IntegralPlayground: View {
         //For .one and .two, it is intentional to use [i] rather than modifying the property as it makes swift dupe the array. Please do not modify
         
         if case .one(let C0, let C1) = startAt {
+            
             
             for (i, point) in baseIntegralPoints.enumerated() {
                 await integralPoints[i] = GraphPoint(xh: point.xh, yv: point.yv + C0, asynch: ())

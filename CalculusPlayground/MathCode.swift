@@ -244,14 +244,14 @@ nonisolated func generateFastIntegral(for inputs: [GraphPoint]) async throws -> 
     }
     //////////
     
-    
+    negativeLeftHand = negativeLeftHand.reversed()
     print("H: \(h)")
     
     for leftHandPoint in negativeLeftHand {
         print("One rect added")
         
         
-        await negativeIntegralCurrent += leftHandPoint.yv * h
+        await negativeIntegralCurrent -= leftHandPoint.yv * h
         await negativeIntegralPoints.append(GraphPoint(xh: leftHandPoint.xh, yv: negativeIntegralCurrent))
         print("rect area: \(await leftHandPoint.yv * h)")
     }
