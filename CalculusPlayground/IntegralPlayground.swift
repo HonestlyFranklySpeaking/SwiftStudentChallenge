@@ -41,63 +41,27 @@ struct IntegralPlayground: View {
         }
         .task {
             bigDone = false
-            done = false
-            await Task.detached(name: "Startup Update", priority: .high) {
-                
-                let startDate = Date()
-                let result = await update(function: function, points: (inputPoints, integralPoints, secondIntegralPoints), basePoints: (baseIntegralPoints, baseSecondIntegralPoints))
-                
-                await setPoint(result, date: startDate)
-                
-            }.value
-            done = true
+            await plotData(startAt: .zero)
             bigDone = true
         }
         .onChange(of: function) { _, _ in
             Task {
-                done = false
                 bigDone = false
-                let startDate = Date()
-                await Task.detached(name: "Change after func modification", priority: .high) {
-                    let result = await update(function: function, points: (inputPoints, integralPoints, secondIntegralPoints), basePoints: (baseIntegralPoints, baseSecondIntegralPoints))
-                    
-                    await setPoint(result, date: startDate)
-                    
-                }.value
-                done = true
+                await plotData(startAt: .zero)
                 bigDone = true
             }
         }
         .onChange(of: c1) { j, k in
             Task {
-                
-                
-                //Starts at 1 because you don't have to regenerate og points or integral
-                done = false
-                let startDate = Date()
-                await Task.detached(name: "Change after c1(0) modification", priority: .high) {
-                    let result = await update(function: function, startAt: .one(c0: c1, c1: c2), points: (inputPoints, integralPoints, secondIntegralPoints), basePoints: (baseIntegralPoints, baseSecondIntegralPoints))
-                    
-                    await setPoint(result, date: startDate)
-                    
-                }.value
-                done = true
+                await plotData(startAt: .two(c0: c1, c1: c2))
             }
         }
         .onChange(of: c2) { _, _ in
             Task {
                 //Starts at step 2 because only integral 2 is affected
-                done = false
-                let startDate = Date()
-                await Task.detached(name: "Change after c1(2) modification", priority: .high) {
-                    let result = await update(function: function, startAt: .two(c0: c1, c1: c2), points: (inputPoints, integralPoints, secondIntegralPoints), basePoints: (baseIntegralPoints, baseSecondIntegralPoints))
-                    
-                    await setPoint(result, date: startDate)
-                    
-                    
-                }.value
-                done = true
+                await plotData(startAt: .one(c0: c1, c1: c2))
             }
+            
         }
         .toolbar {
             ToolbarItem {
@@ -134,6 +98,21 @@ struct IntegralPlayground: View {
         }
         
     }
+    
+    
+    func plotData(startAt: updateStartAt) async {
+        done = false
+        let startDate = Date()
+        await Task.detached(name: "Change after c1(2) modification", priority: .high) {
+            let result = await update(function: function, startAt: startAt, points: (inputPoints, integralPoints, secondIntegralPoints), basePoints: (baseIntegralPoints, baseSecondIntegralPoints))
+            
+            await setPoint(result, date: startDate)
+            
+            
+        }.value
+        done = true
+    }
+
     
     nonisolated func generateData(function f: Function) async -> [GraphPoint] {
         let range: ClosedRange<Double> = -30.0...30.0
