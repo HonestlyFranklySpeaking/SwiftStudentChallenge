@@ -204,6 +204,12 @@ nonisolated func generateIntegral(for inputs: [GraphPoint]) async -> [GraphPoint
     return integralPoints
 }
 
+nonisolated func generateFastIntegral(for inputs: [GraphPoint]) async -> [GraphPoint] {
+    
+    
+    return [GraphPoint(xh: 1, yv: 1)]
+}
+
 nonisolated func riemannSum(for inputs: [GraphPoint], range range_r: ReversibleRange) async throws -> (Double, [GraphPoint]) {
     print("\n INTEGRAl: ")
     let range = range_r.range
