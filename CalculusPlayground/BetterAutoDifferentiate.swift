@@ -438,7 +438,7 @@ struct BetterAutoDifferentiateDemoView: View {
                 .font(.title).bold()
             
             // Let's try f(x) = x^x
-            let powx = Component.product(.cos(.variable), .cos(.variable))
+            let powx = Component.sum(.product(.variable, .variable), .product(.constant(-1), .power(.variable, .constant(2))))
             
             
             let expr = Expression("f(x)", directory: powx)
