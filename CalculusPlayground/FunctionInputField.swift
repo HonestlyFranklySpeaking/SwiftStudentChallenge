@@ -12,13 +12,13 @@ import SwiftUI
 func getColor(for component: Component) -> Color {
     switch component {
     case .constant: return .blue
-    case .variable: return .green
-    case .product:  return .orange
-    case .sum:      return .purple
-    case .power:    return .red
-    case .ln:       return .teal
-    case .sin:      return .pink
-    case .cos:      return .indigo
+    case .variable: return .brown
+    case .product:  return .red
+    case .sum:      return .orange
+    case .power:    return .green
+    case .ln:       return .indigo
+    case .sin:      return .cyan
+    case .cos:      return .mint
     case .hole:     return .gray
     }
 }
@@ -32,70 +32,72 @@ func getColor(for component: Component) -> Color {
 /// dropping a template from the palette swaps the node at this tile's `path`.
 struct Tile: View {
     var component: Component
-
+    
     /// Nesting depth: 0 at the root, +1 per level. Drives the corner radius.
     var order: Int
-
+    
     /// Inset around each tile's content. Doubles as the gap between a tile and
     /// its children (and between siblings) — what keeps the borders concentric.
     var pad: Double = 4
-
-//dragging path
+    
+    //dragging path
     var path: [Int] = []
-
+    
     //closure
     var onReplace: (([Int], Component) -> Void)? = nil
-
+    
     @State private var isTargeted = false
-
+    
     
     var scale: CGFloat = 1
-
+    
     
     private let exponentScale: CGFloat = 0.7
-
+    
     private let slot: CGFloat = 56
     private let baseFont: CGFloat = 28
-
+    
     private let baseCornerRadius: Double = 32
     private let minCornerRadius: Double = 6
-
+    
     // values based on the scale
     private var effPad: CGFloat { CGFloat(pad) * scale }
     private var effSlot: CGFloat { slot * scale }
     private var effFont: CGFloat { baseFont * scale }
-
-  
+    
+    
     var cornerRadius: Double {
         max(minCornerRadius, baseCornerRadius - Double(order) * pad) * Double(scale)
     }
-
+    
     private var shape: RoundedRectangle {
         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
     }
-
+    
     /// Wraps tile content in the standard padded, coloured, rounded chrome.
     /// No forced frame — the content dictates the size.
     private func chrome<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
         content()
             .padding(effPad)
-            .background { shape.fill(getColor(for: component)) }
+            .background { shape.fill(getColor(for: component).opacity(0.6)) }
+            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: cornerRadius))
+            .shadow(radius: 4)
     }
-
-
+    
+    
     private func child(_ c: Component, _ index: Int, childScale: CGFloat? = nil) -> Tile {
         Tile(component: c, order: order + 1, pad: pad,
              path: path + [index], onReplace: onReplace, scale: childScale ?? scale)
     }
-
-   
+    
+    
     private func glyph(_ text: String) -> some View {
         Text(text)
             .font(.system(size: effFont, weight: .semibold))
-            .foregroundStyle(.white)
+            .foregroundStyle(.primary)
             .fixedSize()
     }
-
+    
     
     @ViewBuilder
     private var content: some View {
@@ -105,10 +107,11 @@ struct Tile: View {
                 Text(String(format: "%2g", val))
                     .font(.system(size: effFont))
                     .foregroundStyle(.white)
+                    .padding(.horizontal, 4)
                     .fixedSize()
                     .frame(minWidth: effSlot, minHeight: effSlot)
             }
-
+            
         case .variable:
             chrome {
                 Text("x").italic()
@@ -117,7 +120,7 @@ struct Tile: View {
                     .fixedSize()
                     .frame(minWidth: effSlot, minHeight: effSlot)
             }
-
+            
         case .product(let lhs, let rhs):
             chrome {
                 HStack(spacing: effPad) {
@@ -126,7 +129,7 @@ struct Tile: View {
                     child(rhs, 1)
                 }
             }
-
+            
         case .sum(let lhs, let rhs):
             chrome {
                 HStack(spacing: effPad) {
@@ -135,7 +138,7 @@ struct Tile: View {
                     child(rhs, 1)
                 }
             }
-
+            
         case .power(let base, let exp):
             // True superscript: the exponent (and its whole sub-tree) renders at
             // a fraction of this tile's scale and hangs off the base's top.
@@ -145,22 +148,22 @@ struct Tile: View {
                     child(exp, 1, childScale: scale * exponentScale)
                 }
             }
-
+            
         case .ln(let arg):
             chrome {
-                HStack(spacing: effPad) { glyph("ln"); child(arg, 0) }
+                HStack(spacing: effPad) { glyph(" ln"); child(arg, 0) }
             }
-
+            
         case .sin(let arg):
             chrome {
-                HStack(spacing: effPad) { glyph("sin"); child(arg, 0) }
+                HStack(spacing: effPad) { glyph(" sin"); child(arg, 0) }
             }
-
+            
         case .cos(let arg):
             chrome {
-                HStack(spacing: effPad) { glyph("cos"); child(arg, 0) }
+                HStack(spacing: effPad) { glyph(" cos"); child(arg, 0) }
             }
-
+            
         case .hole:
             // An empty slot to drop onto. An invisible glyph gives it exactly a
             // single-leaf's footprint (so a hole and an `x` are the same size),
@@ -170,14 +173,14 @@ struct Tile: View {
                 .fixedSize()
                 .frame(minWidth: effSlot, minHeight: effSlot)
                 .padding(effPad)
-                .background { shape.fill(Color.gray.opacity(0.12)) }
+                .background { shape.fill(Color.secondary.opacity(0.3)) }
                 .overlay {
                     shape.strokeBorder(style: StrokeStyle(lineWidth: 1.5, dash: [4]))
                         .foregroundStyle(.gray)
                 }
         }
     }
-
+    
     var body: some View {
         if let onReplace {
             content
@@ -204,7 +207,7 @@ struct FunctionInputField: View {
     @State private var component: Component = .hole
     @State private var pad = 4.0
     
-
+    
     @State private var constant: Double = 2.0
     /// Templates the user drags into the canvas. Composite tiles start out full
     /// of holes; the trailing `.hole` acts as an eraser that clears a slot.
@@ -219,27 +222,33 @@ struct FunctionInputField: View {
         .cos(.hole),
         .hole
     ]}
-
+    
     private func replace(_ path: [Int], _ new: Component) {
         component = component.replacing(at: path, with: new)
     }
-
+    
     var body: some View {
         NavigationStack {
-            List {
-                // Canvas: the function being built.
-                Section {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    // Canvas: the function being built.
+                    
                     Text("f(x) =").font(.headline)
                     ScrollView(.horizontal, showsIndicators: false) {
                         Tile(component: component, order: 0, pad: pad,
                              path: [], onReplace: replace)
-                            .padding(4)
+                        .padding(4)
                     }
-                }
-                
-                // Live derivative — only once every slot is filled.
-                
-                Section {
+                    .clipShape(RoundedRectangle(cornerRadius: 36))
+                    .padding(12)
+                    .background {
+                        RoundedRectangle(cornerRadius: 44)
+                            .fill(.thinMaterial)
+                    }
+                    
+                    
+                    // Live derivative — only once every slot is filled.
+                    
                     Text("f′(x) =").font(.headline)
                     if component.hasHole {
                         Text("Fill every slot to see the derivative.")
@@ -251,13 +260,19 @@ struct FunctionInputField: View {
                                  order: 0, pad: pad)
                             .padding(4)
                         }
+                        .clipShape(RoundedRectangle(cornerRadius: 36))
+                        .padding(12)
+                        .background {
+                            RoundedRectangle(cornerRadius: 44)
+                                .fill(.thinMaterial)
+                        }
                     }
-                }
-
-                // Palette of draggable building blocks.
-                Section("Function Composition") {
+                    
+                    Spacer(minLength: 120)
+                    // Palette of draggable building blocks.
+                    
                     HStack {
-                        Text("Constant:")
+                        Text("Const:")
                             .font(.headline).monospaced()
                         TextField("Constant", text: Binding(get: {
                             String(constant)
@@ -271,18 +286,25 @@ struct FunctionInputField: View {
                         
                         Spacer()
                         
-                        Button("e") {
-                            constant = 2.7182818
-                        }.buttonStyle(.bordered)
                         
                         Button("10") {
                             constant = 10
                         }.buttonStyle(.bordered)
                         
+                        Button("e") {
+                            constant = 2.7182
+                        }.buttonStyle(.bordered)
+                        
+                        
                         Button("2") {
                             constant = 2
                         }.buttonStyle(.bordered)
                         
+                    }
+                    .padding(12)
+                    .background {
+                        RoundedRectangle(cornerRadius: 44)
+                            .fill(.thinMaterial)
                     }
                     
                     ScrollView(.horizontal, showsIndicators: false) {
@@ -290,28 +312,38 @@ struct FunctionInputField: View {
                             ForEach(Array(palette.enumerated()), id: \.offset) { _, template in
                                 Tile(component: template, order: 0, pad: pad)
                                     .draggable(template)
+                                    .buttonStyle(.borderless)
                             }
                         }
                         .padding(.vertical, 4)
                     }
+                    .clipShape(RoundedRectangle(cornerRadius: 36))
+                    .padding(12)
+                    .background {
+                        RoundedRectangle(cornerRadius: 44)
+                            .fill(.thinMaterial)
+                    }
                     
                     HStack(alignment: .center) {
                         Spacer()
-                        Button("Clear") { component = .hole }
-                            .frame(minWidth: 100)
+                        Button("Clear", role: .destructive) { component = .hole }
                             .buttonStyle(.bordered)
                         Spacer()
                     }
+                    
+                    
+                    // Controls.
+                    HStack {
+                        Text("Scale")
+                        Slider(value: $pad, in: 2...12)
+                    }
+                    .padding(12)
+                    
                 }
-
-                // Controls.
-                HStack {
-                    Text("Scale")
-                    Slider(value: $pad, in: 2...12)
-                }
+                .padding()
+                .navigationBarTitleDisplayMode(.inline)
+                .navigationTitle("Differentiate")
             }
-            .navigationBarTitleDisplayMode(.inline)
-            .navigationTitle("Differentiate")
         }
         
     }
