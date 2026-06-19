@@ -1,0 +1,169 @@
+{
+  "" : {
+    "diagnostics" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/CalculusPlayground-primary.dia",
+    "emit-module-dependencies" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/CalculusPlayground-primary-emit-module.d",
+    "emit-module-diagnostics" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/CalculusPlayground-primary-emit-module.dia",
+    "pch" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/CalculusPlayground-primary-Bridging-header.pch",
+    "swift-dependencies" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/CalculusPlayground-primary.swiftdeps"
+  },
+  "/Users/miloullman/Desktop/CalculusPlayground/CalculusPlayground/BetterAutoDifferentiate.swift" : {
+    "const-values" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/BetterAutoDifferentiate.swiftconstvalues",
+    "dependencies" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/BetterAutoDifferentiate.d",
+    "diagnostics" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/BetterAutoDifferentiate.dia",
+    "index-unit-output-path" : "/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/BetterAutoDifferentiate.o",
+    "llvm-bc" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/BetterAutoDifferentiate.bc",
+    "object" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/BetterAutoDifferentiate.o",
+    "swift-dependencies" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/BetterAutoDifferentiate.swiftdeps",
+    "swiftmodule" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/BetterAutoDifferentiate~partial.swiftmodule"
+  },
+  "/Users/miloullman/Desktop/CalculusPlayground/CalculusPlayground/CalculusPlaygroundApp.swift" : {
+    "const-values" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/CalculusPlaygroundApp.swiftconstvalues",
+    "dependencies" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/CalculusPlaygroundApp.d",
+    "diagnostics" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/CalculusPlaygroundApp.dia",
+    "index-unit-output-path" : "/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/CalculusPlaygroundApp.o",
+    "llvm-bc" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/CalculusPlaygroundApp.bc",
+    "object" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/CalculusPlaygroundApp.o",
+    "swift-dependencies" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/CalculusPlaygroundApp.swiftdeps",
+    "swiftmodule" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/CalculusPlaygroundApp~partial.swiftmodule"
+  },
+  "/Users/miloullman/Desktop/CalculusPlayground/CalculusPlayground/DerivativePlayground.swift" : {
+    "const-values" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/DerivativePlayground.swiftconstvalues",
+    "dependencies" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/DerivativePlayground.d",
+    "diagnostics" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/DerivativePlayground.dia",
+    "index-unit-output-path" : "/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/DerivativePlayground.o",
+    "llvm-bc" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/DerivativePlayground.bc",
+    "object" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/DerivativePlayground.o",
+    "swift-dependencies" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/DerivativePlayground.swiftdeps",
+    "swiftmodule" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/DerivativePlayground~partial.swiftmodule"
+  },
+  "/Users/miloullman/Desktop/CalculusPlayground/CalculusPlayground/FunctionInputField.swift" : {
+    "const-values" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/FunctionInputField.swiftconstvalues",
+    "dependencies" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/FunctionInputField.d",
+    "diagnostics" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/FunctionInputField.dia",
+    "index-unit-output-path" : "/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/FunctionInputField.o",
+    "llvm-bc" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/FunctionInputField.bc",
+    "object" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/FunctionInputField.o",
+    "swift-dependencies" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/FunctionInputField.swiftdeps",
+    "swiftmodule" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/FunctionInputField~partial.swiftmodule"
+  },
+  "/Users/miloullman/Desktop/CalculusPlayground/CalculusPlayground/FunctionSelector.swift" : {
+    "const-values" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/FunctionSelector.swiftconstvalues",
+    "dependencies" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/FunctionSelector.d",
+    "diagnostics" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/FunctionSelector.dia",
+    "index-unit-output-path" : "/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/FunctionSelector.o",
+    "llvm-bc" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/FunctionSelector.bc",
+    "object" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/FunctionSelector.o",
+    "swift-dependencies" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/FunctionSelector.swiftdeps",
+    "swiftmodule" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/FunctionSelector~partial.swiftmodule"
+  },
+  "/Users/miloullman/Desktop/CalculusPlayground/CalculusPlayground/Helpers.swift" : {
+    "const-values" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/Helpers.swiftconstvalues",
+    "dependencies" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/Helpers.d",
+    "diagnostics" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/Helpers.dia",
+    "index-unit-output-path" : "/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/Helpers.o",
+    "llvm-bc" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/Helpers.bc",
+    "object" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/Helpers.o",
+    "swift-dependencies" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/Helpers.swiftdeps",
+    "swiftmodule" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/Helpers~partial.swiftmodule"
+  },
+  "/Users/miloullman/Desktop/CalculusPlayground/CalculusPlayground/HomeView.swift" : {
+    "const-values" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/HomeView.swiftconstvalues",
+    "dependencies" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/HomeView.d",
+    "diagnostics" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/HomeView.dia",
+    "index-unit-output-path" : "/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/HomeView.o",
+    "llvm-bc" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/HomeView.bc",
+    "object" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/HomeView.o",
+    "swift-dependencies" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/HomeView.swiftdeps",
+    "swiftmodule" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/HomeView~partial.swiftmodule"
+  },
+  "/Users/miloullman/Desktop/CalculusPlayground/CalculusPlayground/IntegralPlayground.swift" : {
+    "const-values" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/IntegralPlayground.swiftconstvalues",
+    "dependencies" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/IntegralPlayground.d",
+    "diagnostics" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/IntegralPlayground.dia",
+    "index-unit-output-path" : "/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/IntegralPlayground.o",
+    "llvm-bc" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/IntegralPlayground.bc",
+    "object" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/IntegralPlayground.o",
+    "swift-dependencies" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/IntegralPlayground.swiftdeps",
+    "swiftmodule" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/IntegralPlayground~partial.swiftmodule"
+  },
+  "/Users/miloullman/Desktop/CalculusPlayground/CalculusPlayground/MathCode.swift" : {
+    "const-values" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/MathCode.swiftconstvalues",
+    "dependencies" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/MathCode.d",
+    "diagnostics" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/MathCode.dia",
+    "index-unit-output-path" : "/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/MathCode.o",
+    "llvm-bc" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/MathCode.bc",
+    "object" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/MathCode.o",
+    "swift-dependencies" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/MathCode.swiftdeps",
+    "swiftmodule" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/MathCode~partial.swiftmodule"
+  },
+  "/Users/miloullman/Desktop/CalculusPlayground/CalculusPlayground/MathGraph.swift" : {
+    "const-values" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/MathGraph.swiftconstvalues",
+    "dependencies" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/MathGraph.d",
+    "diagnostics" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/MathGraph.dia",
+    "index-unit-output-path" : "/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/MathGraph.o",
+    "llvm-bc" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/MathGraph.bc",
+    "object" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/MathGraph.o",
+    "swift-dependencies" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/MathGraph.swiftdeps",
+    "swiftmodule" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/MathGraph~partial.swiftmodule"
+  },
+  "/Users/miloullman/Desktop/CalculusPlayground/CalculusPlayground/RangeSlider.swift" : {
+    "const-values" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/RangeSlider.swiftconstvalues",
+    "dependencies" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/RangeSlider.d",
+    "diagnostics" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/RangeSlider.dia",
+    "index-unit-output-path" : "/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/RangeSlider.o",
+    "llvm-bc" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/RangeSlider.bc",
+    "object" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/RangeSlider.o",
+    "swift-dependencies" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/RangeSlider.swiftdeps",
+    "swiftmodule" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/RangeSlider~partial.swiftmodule"
+  },
+  "/Users/miloullman/Desktop/CalculusPlayground/CalculusPlayground/RiemannSumPlayground.swift" : {
+    "const-values" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/RiemannSumPlayground.swiftconstvalues",
+    "dependencies" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/RiemannSumPlayground.d",
+    "diagnostics" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/RiemannSumPlayground.dia",
+    "index-unit-output-path" : "/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/RiemannSumPlayground.o",
+    "llvm-bc" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/RiemannSumPlayground.bc",
+    "object" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/RiemannSumPlayground.o",
+    "swift-dependencies" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/RiemannSumPlayground.swiftdeps",
+    "swiftmodule" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/RiemannSumPlayground~partial.swiftmodule"
+  },
+  "/Users/miloullman/Desktop/CalculusPlayground/CalculusPlayground/SlideRulesPlayground.swift" : {
+    "const-values" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/SlideRulesPlayground.swiftconstvalues",
+    "dependencies" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/SlideRulesPlayground.d",
+    "diagnostics" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/SlideRulesPlayground.dia",
+    "index-unit-output-path" : "/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/SlideRulesPlayground.o",
+    "llvm-bc" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/SlideRulesPlayground.bc",
+    "object" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/SlideRulesPlayground.o",
+    "swift-dependencies" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/SlideRulesPlayground.swiftdeps",
+    "swiftmodule" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/SlideRulesPlayground~partial.swiftmodule"
+  },
+  "/Users/miloullman/Desktop/CalculusPlayground/CalculusPlayground/TangentLinePlayground.swift" : {
+    "const-values" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/TangentLinePlayground.swiftconstvalues",
+    "dependencies" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/TangentLinePlayground.d",
+    "diagnostics" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/TangentLinePlayground.dia",
+    "index-unit-output-path" : "/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/TangentLinePlayground.o",
+    "llvm-bc" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/TangentLinePlayground.bc",
+    "object" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/TangentLinePlayground.o",
+    "swift-dependencies" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/TangentLinePlayground.swiftdeps",
+    "swiftmodule" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/TangentLinePlayground~partial.swiftmodule"
+  },
+  "/Users/miloullman/Desktop/CalculusPlayground/CalculusPlayground/TaylorSeriesPlayground.swift" : {
+    "const-values" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/TaylorSeriesPlayground.swiftconstvalues",
+    "dependencies" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/TaylorSeriesPlayground.d",
+    "diagnostics" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/TaylorSeriesPlayground.dia",
+    "index-unit-output-path" : "/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/TaylorSeriesPlayground.o",
+    "llvm-bc" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/TaylorSeriesPlayground.bc",
+    "object" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/TaylorSeriesPlayground.o",
+    "swift-dependencies" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/TaylorSeriesPlayground.swiftdeps",
+    "swiftmodule" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/TaylorSeriesPlayground~partial.swiftmodule"
+  },
+  "/Users/miloullman/Desktop/CalculusPlayground/CalculusPlayground/ToolbarGauge.swift" : {
+    "const-values" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/ToolbarGauge.swiftconstvalues",
+    "dependencies" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/ToolbarGauge.d",
+    "diagnostics" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/ToolbarGauge.dia",
+    "index-unit-output-path" : "/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/ToolbarGauge.o",
+    "llvm-bc" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/ToolbarGauge.bc",
+    "object" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/ToolbarGauge.o",
+    "swift-dependencies" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/ToolbarGauge.swiftdeps",
+    "swiftmodule" : "/Users/miloullman/Desktop/CalculusPlayground/build/Build/Intermediates.noindex/CalculusPlayground.build/Debug-iphonesimulator/CalculusPlayground.build/Objects-normal/arm64/ToolbarGauge~partial.swiftmodule"
+  }
+}

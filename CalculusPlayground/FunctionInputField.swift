@@ -40,24 +40,34 @@ struct Tile: View {
     /// its children (and between siblings) — what keeps the borders concentric.
     var pad: Double = 4
 
-    /// Address of this node from the root, as a list of child indices. Used to
-    /// tell `onReplace` which sub-tree a drop should replace.
+//dragging path
     var path: [Int] = []
 
-    /// When non-nil, this tile is editable: `(path, droppedComponent)`.
+    //closure
     var onReplace: (([Int], Component) -> Void)? = nil
 
     @State private var isTargeted = false
 
-    private let baseCornerRadius: Double = 28
+    
+    var scale: CGFloat = 1
+
+    
+    private let exponentScale: CGFloat = 0.7
+
+    private let slot: CGFloat = 56
+    private let baseFont: CGFloat = 28
+
+    private let baseCornerRadius: Double = 32
     private let minCornerRadius: Double = 6
 
-    /// For two rounded rectangles separated by an even border of width `pad`,
-    /// the inner radius must be `outer - pad` to stay concentric. Each nesting
-    /// level adds one `pad` of inset, so we step down by `pad` per level —
-    /// clamped so deep tiles never collapse to a negative radius.
+    // values based on the scale
+    private var effPad: CGFloat { CGFloat(pad) * scale }
+    private var effSlot: CGFloat { slot * scale }
+    private var effFont: CGFloat { baseFont * scale }
+
+  
     var cornerRadius: Double {
-        max(minCornerRadius, baseCornerRadius - Double(order) * pad)
+        max(minCornerRadius, baseCornerRadius - Double(order) * pad) * Double(scale)
     }
 
     private var shape: RoundedRectangle {
@@ -65,35 +75,52 @@ struct Tile: View {
     }
 
     /// Wraps tile content in the standard padded, coloured, rounded chrome.
-    @ViewBuilder
+    /// No forced frame — the content dictates the size.
     private func chrome<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
         content()
-            .padding(pad)
+            .padding(effPad)
             .background { shape.fill(getColor(for: component)) }
     }
 
-    /// A child tile one level deeper, carrying its address and the editor hook.
-    private func child(_ c: Component, _ index: Int) -> Tile {
-        Tile(component: c, order: order + 1, pad: pad, path: path + [index], onReplace: onReplace)
+
+    private func child(_ c: Component, _ index: Int, childScale: CGFloat? = nil) -> Tile {
+        Tile(component: c, order: order + 1, pad: pad,
+             path: path + [index], onReplace: onReplace, scale: childScale ?? scale)
     }
 
-    /// An operator/keyword glyph drawn directly on the parent's background.
+   
     private func glyph(_ text: String) -> some View {
-        Text(text).foregroundStyle(.white).fontWeight(.semibold)
+        Text(text)
+            .font(.system(size: effFont, weight: .semibold))
+            .foregroundStyle(.white)
+            .fixedSize()
     }
 
+    
     @ViewBuilder
     private var content: some View {
         switch component {
         case .constant(let val):
-            chrome { Text(String(format: "%.1f", val)).foregroundStyle(.white) }
+            chrome {
+                Text(String(format: "%2g", val))
+                    .font(.system(size: effFont))
+                    .foregroundStyle(.white)
+                    .fixedSize()
+                    .frame(minWidth: effSlot, minHeight: effSlot)
+            }
 
         case .variable:
-            chrome { Text("x").italic().foregroundStyle(.white) }
+            chrome {
+                Text("x").italic()
+                    .font(.system(size: effFont))
+                    .foregroundStyle(.white)
+                    .fixedSize()
+                    .frame(minWidth: effSlot, minHeight: effSlot)
+            }
 
         case .product(let lhs, let rhs):
             chrome {
-                HStack(spacing: pad) {
+                HStack(spacing: effPad) {
                     child(lhs, 0)
                     glyph("×")
                     child(rhs, 1)
@@ -102,7 +129,7 @@ struct Tile: View {
 
         case .sum(let lhs, let rhs):
             chrome {
-                HStack(spacing: pad) {
+                HStack(spacing: effPad) {
                     child(lhs, 0)
                     glyph("+")
                     child(rhs, 1)
@@ -110,39 +137,44 @@ struct Tile: View {
             }
 
         case .power(let base, let exp):
-            // Exponent as a true superscript: top-aligned and smaller, so this
-            // reads as `xⁿ` rather than `x ^ n`.
+            // True superscript: the exponent (and its whole sub-tree) renders at
+            // a fraction of this tile's scale and hangs off the base's top.
             chrome {
-                HStack(alignment: .top, spacing: pad / 2) {
+                HStack(alignment: .top, spacing: effPad / 2) {
                     child(base, 0)
-                    child(exp, 1).font(.footnote)
+                    child(exp, 1, childScale: scale * exponentScale)
                 }
             }
 
         case .ln(let arg):
             chrome {
-                HStack(spacing: pad) { glyph("ln"); child(arg, 0) }
+                HStack(spacing: effPad) { glyph("ln"); child(arg, 0) }
             }
 
         case .sin(let arg):
             chrome {
-                HStack(spacing: pad) { glyph("sin"); child(arg, 0) }
+                HStack(spacing: effPad) { glyph("sin"); child(arg, 0) }
             }
 
         case .cos(let arg):
             chrome {
-                HStack(spacing: pad) { glyph("cos"); child(arg, 0) }
+                HStack(spacing: effPad) { glyph("cos"); child(arg, 0) }
             }
 
         case .hole:
-            // An empty slot: a dashed, faintly-filled placeholder to drop onto.
-            shape
-                .fill(Color.gray.opacity(0.12))
+            // An empty slot to drop onto. An invisible glyph gives it exactly a
+            // single-leaf's footprint (so a hole and an `x` are the same size),
+            // dressed with a dashed outline instead of a solid fill.
+            Text("x").italic().opacity(0)
+                .font(.system(size: effFont))
+                .fixedSize()
+                .frame(minWidth: effSlot, minHeight: effSlot)
+                .padding(effPad)
+                .background { shape.fill(Color.gray.opacity(0.12)) }
                 .overlay {
-                    shape.strokeBorder(style: StrokeStyle(lineWidth: 2, dash: [4]))
+                    shape.strokeBorder(style: StrokeStyle(lineWidth: 1.5, dash: [4]))
                         .foregroundStyle(.gray)
                 }
-                .frame(minWidth: 34, minHeight: 34)
         }
     }
 
@@ -171,12 +203,14 @@ struct Tile: View {
 struct FunctionInputField: View {
     @State private var component: Component = .hole
     @State private var pad = 4.0
+    
 
+    @State private var constant: Double = 2.0
     /// Templates the user drags into the canvas. Composite tiles start out full
     /// of holes; the trailing `.hole` acts as an eraser that clears a slot.
-    private let palette: [Component] = [
+    private var palette: [Component] {[
         .variable,
-        .constant(1),
+        .constant(constant),
         .sum(.hole, .hole),
         .product(.hole, .hole),
         .power(.hole, .hole),
@@ -184,65 +218,102 @@ struct FunctionInputField: View {
         .sin(.hole),
         .cos(.hole),
         .hole
-    ]
+    ]}
 
     private func replace(_ path: [Int], _ new: Component) {
         component = component.replacing(at: path, with: new)
     }
 
     var body: some View {
-        VStack(spacing: 24) {
-            // Canvas: the function being built.
-            VStack(alignment: .leading, spacing: 8) {
-                Text("f(x) =").font(.headline)
-                ScrollView(.horizontal, showsIndicators: false) {
-                    Tile(component: component, order: 0, pad: pad,
-                         path: [], onReplace: replace)
-                        .padding(4)
-                }
-            }
-
-            // Live derivative — only once every slot is filled.
-            VStack(alignment: .leading, spacing: 8) {
-                Text("f′(x) =").font(.headline)
-                if component.hasHole {
-                    Text("Fill every slot to see the derivative.")
-                        .foregroundStyle(.secondary)
-                        .font(.callout)
-                } else {
+        NavigationStack {
+            List {
+                // Canvas: the function being built.
+                Section {
+                    Text("f(x) =").font(.headline)
                     ScrollView(.horizontal, showsIndicators: false) {
-                        Tile(component: simplify(differentiate(component)),
-                             order: 0, pad: pad)
+                        Tile(component: component, order: 0, pad: pad,
+                             path: [], onReplace: replace)
                             .padding(4)
                     }
                 }
-            }
-
-            Spacer()
-
-            // Palette of draggable building blocks.
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Drag a block onto a slot").font(.headline)
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 12) {
-                        ForEach(Array(palette.enumerated()), id: \.offset) { _, template in
-                            Tile(component: template, order: 0, pad: pad)
-                                .draggable(template)
+                
+                // Live derivative — only once every slot is filled.
+                
+                Section {
+                    Text("f′(x) =").font(.headline)
+                    if component.hasHole {
+                        Text("Fill every slot to see the derivative.")
+                            .foregroundStyle(.secondary)
+                            .font(.callout)
+                    } else {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            Tile(component: simplify(differentiate(component)),
+                                 order: 0, pad: pad)
+                            .padding(4)
                         }
                     }
-                    .padding(.vertical, 4)
+                }
+
+                // Palette of draggable building blocks.
+                Section("Function Composition") {
+                    HStack {
+                        Text("Constant:")
+                            .font(.headline).monospaced()
+                        TextField("Constant", text: Binding(get: {
+                            String(constant)
+                        }, set: { text in
+                            if let value = Double(text) {
+                                constant = value
+                            } else {
+                                constant = 2.0
+                            }
+                        })).font(.headline).monospaced()
+                        
+                        Spacer()
+                        
+                        Button("e") {
+                            constant = 2.7182818
+                        }.buttonStyle(.bordered)
+                        
+                        Button("10") {
+                            constant = 10
+                        }.buttonStyle(.bordered)
+                        
+                        Button("2") {
+                            constant = 2
+                        }.buttonStyle(.bordered)
+                        
+                    }
+                    
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 12) {
+                            ForEach(Array(palette.enumerated()), id: \.offset) { _, template in
+                                Tile(component: template, order: 0, pad: pad)
+                                    .draggable(template)
+                            }
+                        }
+                        .padding(.vertical, 4)
+                    }
+                    
+                    HStack(alignment: .center) {
+                        Spacer()
+                        Button("Clear") { component = .hole }
+                            .frame(minWidth: 100)
+                            .buttonStyle(.bordered)
+                        Spacer()
+                    }
+                }
+
+                // Controls.
+                HStack {
+                    Text("Scale")
+                    Slider(value: $pad, in: 2...12)
                 }
             }
-
-            // Controls.
-            HStack {
-                Text("Spacing")
-                Slider(value: $pad, in: 0...10)
-                Button("Clear") { component = .hole }
-                    .buttonStyle(.bordered)
-            }
+            .navigationBarTitleDisplayMode(.inline)
+            .navigationTitle("Differentiate")
         }
-        .padding()
+        
     }
 }
 
