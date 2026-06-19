@@ -204,10 +204,63 @@ nonisolated func generateIntegral(for inputs: [GraphPoint]) async -> [GraphPoint
     return integralPoints
 }
 
-nonisolated func generateFastIntegral(for inputs: [GraphPoint]) async -> [GraphPoint] {
+nonisolated func generateFastIntegral(for inputs: [GraphPoint]) async throws -> [GraphPoint] {
+    
+    var positiveIntegralPoints: [GraphPoint] = []
+    var negativeIntegralPoints: [GraphPoint] = []
+
+    var positiveIntegralCurrent: Double = 0
+    var negativeIntegralCurrent: Double = 0
+    
+    print("\n INTEGRAl: ")
     
     
-    return [GraphPoint(xh: 1, yv: 1)]
+    let positiveDomain = await 0.0 ... inputs.last!.xh
+    let negativeDomain = await inputs.first!.xh ... 0.0
+    
+    var positiveLeftHand: [GraphPoint] = []
+    var negativeLeftHand: [GraphPoint] = []
+    
+    for i in inputs {
+        if await positiveDomain.contains(i.xh) {
+            positiveLeftHand.append(i)
+        } else if await negativeDomain.contains(i.xh) {
+            negativeLeftHand.append(i)
+        }
+    }
+    
+    ///////////////////////////////////////////
+    
+    let h = await positiveLeftHand[1].xh - positiveLeftHand[0].xh
+    print("H: \(h)")
+    
+    for leftHandPoint in positiveLeftHand {
+        print("One rect added")
+        
+        
+        await positiveIntegralCurrent += leftHandPoint.yv * h
+        await positiveIntegralPoints.append(GraphPoint(xh: leftHandPoint.xh, yv: positiveIntegralCurrent))
+        print("rect area: \(await leftHandPoint.yv * h)")
+    }
+    //////////
+    
+    
+    print("H: \(h)")
+    
+    for leftHandPoint in negativeLeftHand {
+        print("One rect added")
+        
+        
+        await negativeIntegralCurrent += leftHandPoint.yv * h
+        await negativeIntegralPoints.append(GraphPoint(xh: leftHandPoint.xh, yv: negativeIntegralCurrent))
+        print("rect area: \(await leftHandPoint.yv * h)")
+    }
+    
+    
+    var reversedNegativeIntegralPoints: [GraphPoint] = negativeIntegralPoints.reversed()
+    reversedNegativeIntegralPoints.append(contentsOf: positiveIntegralPoints)
+    return reversedNegativeIntegralPoints
+
 }
 
 nonisolated func riemannSum(for inputs: [GraphPoint], range range_r: ReversibleRange) async throws -> (Double, [GraphPoint]) {

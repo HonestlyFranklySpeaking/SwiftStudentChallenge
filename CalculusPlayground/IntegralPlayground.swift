@@ -149,12 +149,12 @@ struct IntegralPlayground: View {
             secondIntegralPoints = []
             
             inputPoints = await generateData(function: function)
-            baseIntegralPoints = await generateIntegral(for: inputPoints)
+            baseIntegralPoints = (try? await generateFastIntegral(for: inputPoints)) ?? []
             for point in baseIntegralPoints {
                 await integralPoints.append(GraphPoint(xh: point.xh, yv: point.yv+c1, asynch: ()))
             }
             
-            baseSecondIntegralPoints = await generateIntegral(for: baseIntegralPoints)
+            baseSecondIntegralPoints = (try? await generateFastIntegral(for: baseIntegralPoints)) ?? []
             for point in baseSecondIntegralPoints {
                 await secondIntegralPoints.append(GraphPoint(xh: point.xh, yv: point.yv+c2, asynch: ()))
             }
