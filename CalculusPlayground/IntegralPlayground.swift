@@ -15,6 +15,7 @@ struct IntegralPlayground: View {
     @State var c2: Double = 0
     @State var function: Function = Function.sine
     @State var inputPoints: [GraphPoint] = []
+    @State var showFunctionOptions: Bool = false
     
     @State var baseIntegralPoints: [GraphPoint] = []
     @State var baseSecondIntegralPoints: [GraphPoint] = []
@@ -99,27 +100,18 @@ struct IntegralPlayground: View {
             }
         }
         .toolbar {
-            Image(systemName: done ? "checkmark.circle.fill" : "xmark.circle.fill")
-            menu
-        }
-    }
-   
-    var menu: some View {
-        Menu {
-            Picker(selection: $function) {
-                Text("Sine").tag(Function.sine)
-                Text("Exponential").tag(Function.exp)
-                Text("Square").tag(Function.square)
-                Text("Natural Log").tag(Function.naturalLog)
-                Text("Polynomial").tag(Function.humpy)
-                Text("Inverse").tag(Function.inverse)
-            } label: {
-                Text("Functions")
+            ToolbarItem {
+                Button {
+                    showFunctionOptions.toggle()
+                } label: {
+                    Image(systemName: "graph.2d")
+                }
+                .tint(.purple)
+                .buttonStyle(.glassProminent)
+                .popover(isPresented: $showFunctionOptions) {
+                    FunctionSelector(function: $function, showFunctionOptions: $showFunctionOptions)
+                }
             }
-        } label: {
-            Image(systemName: "graph.2d")
-                .frame(width: 36, height: 36)
-                .background(Circle().fill(.purple))
         }
     }
     
