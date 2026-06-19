@@ -434,11 +434,11 @@ struct BetterAutoDifferentiateDemoView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("BetterAutoDifferentiate Demo")
+            Text("Analytical Derivatives")
                 .font(.title).bold()
             
             // Let's try f(x) = x^x
-            let powx = Component.power(.product(.sin(.variable), .constant(3)), .constant(2))
+            let powx = Component.product(.cos(.variable), .cos(.variable))
             
             
             let expr = Expression("f(x)", directory: powx)
@@ -447,12 +447,12 @@ struct BetterAutoDifferentiateDemoView: View {
             let derivativeExpr = Expression("f'(x)", directory: simplifiedDerivative)
 
             Group {
-                Text("Expression: f(x) = \(textify(expr.directory))")
-                Text("Derivative: f'(x) = \(textify(derivativeComponent))")
-                Text("Simplified: f'(x) = \(textify(simplifiedDerivative))")
+                Text("f(x) = \(textify(expr.directory))")
+                Text("f'(x) = \(textify(derivativeComponent))")
+                Text("Simplified: \(textify(simplifiedDerivative))")
                 HStack {
                     Text("x =")
-                    Slider(value: $xValue, in: 0.01...10, step: 0.01)
+                    Slider(value: $xValue, in: -15...15, step: 0.01)
                     Text(String(format: "%.2f", xValue))
                 }
                 Text("f(\(String(format: "%.2f", xValue))) = \(expr.transform(xValue))")
