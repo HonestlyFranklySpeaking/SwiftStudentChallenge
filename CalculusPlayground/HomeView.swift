@@ -39,6 +39,9 @@ struct HomeView: View {
                             NavigationLink(destination: TaylorSeriesPlayground()) {
                                 Text("Taylor Series")
                             }
+                            NavigationLink(destination: FunctionInputField()) {
+                                Text("AutoDiff")
+                            }
                         }
                         .listRowBackground(Color.clear.background(.regularMaterial))
                     }

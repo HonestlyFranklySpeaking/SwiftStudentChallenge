@@ -7,9 +7,12 @@
 
 import Foundation
 import SwiftUI
+import UniformTypeIdentifiers
 
 // Fundamental components making up a function. indirect just means the enum can be recursive.
-indirect enum Component: Equatable {
+// Codable so a Component can ride along as a drag-and-drop payload (see Transferable
+// conformance in FunctionInputField.swift).
+nonisolated indirect enum Component: Equatable, Codable {
     case sum(_ a1: Component, _ a2: Component)
     case product(_ f1: Component, _ f2: Component)
     case power(_ b: Component, _ e: Component)
@@ -18,6 +21,66 @@ indirect enum Component: Equatable {
     case ln(_ arg: Component) // <-- NEW: natural logarithm
     case sin(_ arg: Component)
     case cos(_ arg: Component)
+    case hole // an empty slot waiting to be filled by the editor
+}
+
+extension Component {
+    /// Walk to the node addressed by `path` (a list of child indices from the
+    /// root) and return a new tree with that node replaced by `new`. An empty
+    /// path replaces this node itself. Out-of-range indices are no-ops.
+    ///
+    /// Child indexing matches how `Tile` lays children out:
+    ///  • sum/product: 0 = left, 1 = right
+    ///  • power: 0 = base, 1 = exponent
+    ///  • ln/sin/cos: 0 = argument
+    func replacing(at path: ArraySlice<Int>, with new: Component) -> Component {
+        guard let idx = path.first else { return new }
+        let rest = path.dropFirst()
+        switch self {
+        case .sum(let a, let b):
+            return idx == 0 ? .sum(a.replacing(at: rest, with: new), b)
+                            : .sum(a, b.replacing(at: rest, with: new))
+        case .product(let a, let b):
+            return idx == 0 ? .product(a.replacing(at: rest, with: new), b)
+                            : .product(a, b.replacing(at: rest, with: new))
+        case .power(let base, let e):
+            return idx == 0 ? .power(base.replacing(at: rest, with: new), e)
+                            : .power(base, e.replacing(at: rest, with: new))
+        case .ln(let arg):  return idx == 0 ? .ln(arg.replacing(at: rest, with: new))  : self
+        case .sin(let arg): return idx == 0 ? .sin(arg.replacing(at: rest, with: new)) : self
+        case .cos(let arg): return idx == 0 ? .cos(arg.replacing(at: rest, with: new)) : self
+        case .variable, .constant, .hole:
+            return self // leaves have no children
+        }
+    }
+
+    func replacing(at path: [Int], with new: Component) -> Component {
+        replacing(at: path[...], with: new)
+    }
+
+    /// True if this tree (or any sub-tree) still contains an unfilled slot.
+    var hasHole: Bool {
+        switch self {
+        case .hole: return true
+        case .variable, .constant: return false
+        case .ln(let a), .sin(let a), .cos(let a): return a.hasHole
+        case .sum(let a, let b), .product(let a, let b), .power(let a, let b):
+            return a.hasHole || b.hasHole
+        }
+    }
+}
+
+// Lets a Component ride along as a drag-and-drop payload. Declared in the same
+// file as the type so its (auto-derived) Sendable conformance is in scope.
+extension UTType {
+    /// Private type for in-app drags only — no Info.plist declaration required.
+    nonisolated static let calculusComponent = UTType(exportedAs: "com.calculusplayground.component")
+}
+
+extension Component: Transferable {
+    nonisolated static var transferRepresentation: some TransferRepresentation {
+        CodableRepresentation(contentType: .calculusComponent)
+    }
 }
 
 struct Expression: Identifiable, Hashable {
@@ -102,6 +165,9 @@ struct Expression: Identifiable, Hashable {
             case .cos(let arg):
                 let evalArg = evaluator(for: arg)
                 return { x in cos(evalArg(x)) }
+            case .hole:
+                // An unfilled slot has no value; surfaces as NaN rather than crashing.
+                return { _ in Double.nan }
             }
         }
         
@@ -181,6 +247,8 @@ func textify(_ component: Component) -> String {
         return "sin(\(textify(arg)))"
     case .cos(let arg):
         return "cos(\(textify(arg)))"
+    case .hole:
+        return "□"
     }
 }
 
@@ -225,6 +293,9 @@ func differentiate(_ directory: Component) -> Component {
         // d/dx ln(f(x)) = f'(x)/f(x)
         let argPrime = differentiate(arg)
         return Component.product(argPrime, .product(.constant(-1), .sin(arg)))
+    case .hole:
+        // The derivative of an unknown is still unknown.
+        return .hole
     }
 }
 
@@ -253,6 +324,7 @@ private func structureKey(_ c: Component) -> String {
     case .ln(let a):           return "L(\(structureKey(a)))"
     case .sin(let a):          return "N(\(structureKey(a)))"
     case .cos(let a):          return "O(\(structureKey(a)))"
+    case .hole:                return "H"
     }
 }
 
@@ -416,6 +488,8 @@ func simplify(_ component: Component, epsilon: Double = 1e-3) -> Component {
             let a = simp(arg)
             if case .constant(let v) = a { return .constant(fold(cos(v))) }
             return .cos(a)
+        case .hole:
+            return c
         }
     }
 
