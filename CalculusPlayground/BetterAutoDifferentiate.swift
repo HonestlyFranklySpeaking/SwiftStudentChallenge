@@ -684,7 +684,9 @@ func rectifySimplifiedComponent(_ c: Component) -> Component {
                 if case .constant(let a) = obj {
                     denominatorCoefficient *= a
                 } else {
-                    newDenominator.append(obj)
+                    if numerators.contains(obj) {} else {
+                        newDenominator.append(obj)
+                    }
                 }
             }
             if denominatorCoefficient != 1 {
@@ -721,7 +723,9 @@ func rectifySimplifiedComponent(_ c: Component) -> Component {
                 if case .constant(let a) = obj {
                     denominatorCoefficient *= a
                 } else {
-                    newDenominator.append(obj)
+                    if numerators.contains(obj) {} else {
+                        newDenominator.append(obj)
+                    }
                 }
             }
             if denominatorCoefficient != 1 {
