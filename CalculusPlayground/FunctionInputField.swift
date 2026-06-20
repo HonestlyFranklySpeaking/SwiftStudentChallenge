@@ -267,10 +267,31 @@ struct FunctionInputField: View {
                             .fill(.thinMaterial)
                     }
                     
+                   ////////
+                    Text("f′(x) = unrectified \(textify(simplify(differentiate(component))))").font(.headline)
+                    if component.hasHole {
+                        Text("Fill every slot to see the derivative.")
+                            .foregroundStyle(.secondary)
+                            .font(.callout)
+                    } else {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            Tile(component: (simplify(differentiate(component))),
+                                 order: 0, pad: pad)
+                            .padding(4)
+                        }
+                        .clipShape(RoundedRectangle(cornerRadius: 36))
+                        .padding(12)
+                        .background {
+                            RoundedRectangle(cornerRadius: 44)
+                                .fill(.thinMaterial)
+                        }
+                    }
+                    
+                    ////////
                     
                     // Live derivative — only once every slot is filled.
                     
-                    Text("f′(x) =").font(.headline)
+                    Text("f′(x) = \(textify(rectifySimplifiedComponent(simplify(differentiate(component)))))").font(.headline)
                     if component.hasHole {
                         Text("Fill every slot to see the derivative.")
                             .foregroundStyle(.secondary)

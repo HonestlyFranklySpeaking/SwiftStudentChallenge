@@ -599,8 +599,29 @@ func rectifySimplifiedComponent(_ c: Component) -> Component {
         } else {
             return c
         }
-    case .product, .quotient:
-        var (nums, denoms) = collectNumeratorsDenominators(c)
+    case .product(let a, let b):
+        var (nums, denoms) = collectNumeratorsDenominators(.product(rectifySimplifiedComponent(a), rectifySimplifiedComponent(b)))
+        var currentNum: Component
+        if nums.count > 0 {
+            currentNum = nums.removeFirst()
+            for i in nums {
+                currentNum = .product(currentNum, i)
+            }
+        } else {
+            currentNum = .constant(1)
+        }
+        
+        guard denoms.count > 0 else {
+            return currentNum
+        }
+        var currentDenom = denoms.removeFirst()
+        for i in nums {
+            currentDenom = .product(currentDenom, i)
+        }
+        
+        return .quotient(currentNum, currentDenom)
+    case .quotient(let a, let b):
+        var (nums, denoms) = collectNumeratorsDenominators(.quotient(rectifySimplifiedComponent(a), rectifySimplifiedComponent(b)))
         var currentNum: Component
         if nums.count > 0 {
             currentNum = nums.removeFirst()
@@ -627,8 +648,10 @@ func rectifySimplifiedComponent(_ c: Component) -> Component {
         case .constant, .variable, .hole, .sum, .difference, .sin, .cos, .ln: return ([c], [])
         case .power(let a, let b):
             if let negatedB = makeNegativePositive(b) {
+                print("\(textify(c)) power transferred to denom")
                 return ([], [.power(a, negatedB)])
             } else {
+                print("\(textify(c)) power released as is")
                 return ([c], [])
             }
         case .product(let a, let b):
@@ -636,16 +659,24 @@ func rectifySimplifiedComponent(_ c: Component) -> Component {
             var denominators = collectNumeratorsDenominators(a).1
             numerators.append(contentsOf: collectNumeratorsDenominators(b).0)
             denominators.append(contentsOf: collectNumeratorsDenominators(b).1)
-            numerators.sort { structureKey($0) > structureKey($1) }
-            denominators.sort { structureKey($0) > structureKey($1) }
             return (numerators, denominators)
         case .quotient(let a, let b):
             var numerators = collectNumeratorsDenominators(a).0
             var denominators = collectNumeratorsDenominators(a).1
             numerators.append(contentsOf: collectNumeratorsDenominators(b).1)
             denominators.append(contentsOf: collectNumeratorsDenominators(b).0)
-            numerators.sort { structureKey($0) > structureKey($1) }
-            denominators.sort { structureKey($0) > structureKey($1) }
+            var numeratorCoefficient: Double = 1
+            var newNumerators: [Component] = []
+            for (i, obj) in numerators.enumerated() {
+                if case .constant(let a) = obj {
+                    numeratorCoefficient *= a
+                } else {
+                    newNumerators.append(obj)
+                }
+            }
+            if numeratorCoefficient != 1 {
+                numerators.insert(.constant(numeratorCoefficient), at: 0)
+            }
             return (numerators, denominators)
         }
     }
