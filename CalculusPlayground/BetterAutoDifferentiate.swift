@@ -661,11 +661,13 @@ func rectifySimplifiedComponent(_ c: Component) -> Component {
             denominators.append(contentsOf: collectNumeratorsDenominators(b).1)
             var numeratorCoefficient: Double = 1
             var newNumerators: [Component] = []
-            for (i, obj) in numerators.enumerated() {
+            for obj in numerators {
                 if case .constant(let a) = obj {
                     numeratorCoefficient *= a
                 } else {
-                    newNumerators.append(obj)
+                    if denominators.contains(obj) {} else {
+                        newNumerators.append(obj)
+                    }
                 }
             }
 
@@ -678,7 +680,7 @@ func rectifySimplifiedComponent(_ c: Component) -> Component {
             var denominatorCoefficient: Double = 1
             var newDenominator: [Component] = []
             
-            for (i, obj) in denominators.enumerated() {
+            for obj in denominators {
                 if case .constant(let a) = obj {
                     denominatorCoefficient *= a
                 } else {
@@ -697,11 +699,13 @@ func rectifySimplifiedComponent(_ c: Component) -> Component {
             denominators.append(contentsOf: collectNumeratorsDenominators(b).0)
             var numeratorCoefficient: Double = 1
             var newNumerators: [Component] = []
-            for (i, obj) in numerators.enumerated() {
+            for obj in numerators {
                 if case .constant(let a) = obj {
                     numeratorCoefficient *= a
                 } else {
-                    newNumerators.append(obj)
+                    if denominators.contains(obj) {} else {
+                        newNumerators.append(obj)
+                    }
                 }
             }
             if numeratorCoefficient != 1 {
@@ -713,7 +717,7 @@ func rectifySimplifiedComponent(_ c: Component) -> Component {
             var denominatorCoefficient: Double = 1
             var newDenominator: [Component] = []
             
-            for (i, obj) in denominators.enumerated() {
+            for obj in denominators {
                 if case .constant(let a) = obj {
                     denominatorCoefficient *= a
                 } else {
