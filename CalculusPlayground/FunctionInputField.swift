@@ -223,7 +223,7 @@ struct Tile: View {
 // MARK: - Editor
 
 struct FunctionInputField: View {
-    @State private var component: Component = .hole
+    @State private var component: Component = .power(.power(.variable, .constant(2)), .ln(.variable))
     @State private var pad = 4.0
     
     

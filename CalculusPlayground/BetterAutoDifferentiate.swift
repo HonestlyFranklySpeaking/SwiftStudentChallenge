@@ -648,10 +648,8 @@ func rectifySimplifiedComponent(_ c: Component) -> Component {
         case .constant, .variable, .hole, .sum, .difference, .sin, .cos, .ln: return ([c], [])
         case .power(let a, let b):
             if let negatedB = makeNegativePositive(b) {
-                print("\(textify(c)) power transferred to denom")
                 return ([], [.power(a, negatedB)])
             } else {
-                print("\(textify(c)) power released as is")
                 return ([c], [])
             }
         case .product(let a, let b):
@@ -659,6 +657,19 @@ func rectifySimplifiedComponent(_ c: Component) -> Component {
             var denominators = collectNumeratorsDenominators(a).1
             numerators.append(contentsOf: collectNumeratorsDenominators(b).0)
             denominators.append(contentsOf: collectNumeratorsDenominators(b).1)
+            
+            print("\n\n\n\n\n\nNUMERATORS")
+            for i in numerators {
+                print(textify(i), terminator: "***")
+            }
+            
+            print("\n\n\n\n\n\nDENOMINATORS")
+            for i in denominators {
+                print(textify(i), terminator: "***")
+            }
+            
+            
+            
             var numeratorCoefficient: Double = 1
             var newNumerators: [Component] = []
             for obj in numerators {
@@ -666,6 +677,9 @@ func rectifySimplifiedComponent(_ c: Component) -> Component {
                     numeratorCoefficient *= a
                 } else {
                     if denominators.contains(obj) {} else {
+                        if case .quotient(let a, let b) = obj {
+                            print("QuoTIENT!!!!")
+                        }
                         newNumerators.append(obj)
                     }
                 }
