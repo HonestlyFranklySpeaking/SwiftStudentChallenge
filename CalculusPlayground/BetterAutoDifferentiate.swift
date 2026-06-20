@@ -659,7 +659,37 @@ func rectifySimplifiedComponent(_ c: Component) -> Component {
             var denominators = collectNumeratorsDenominators(a).1
             numerators.append(contentsOf: collectNumeratorsDenominators(b).0)
             denominators.append(contentsOf: collectNumeratorsDenominators(b).1)
-            return (numerators, denominators)
+            var numeratorCoefficient: Double = 1
+            var newNumerators: [Component] = []
+            for (i, obj) in numerators.enumerated() {
+                if case .constant(let a) = obj {
+                    numeratorCoefficient *= a
+                } else {
+                    newNumerators.append(obj)
+                }
+            }
+
+            if numeratorCoefficient != 1 {
+                newNumerators.insert(.constant(numeratorCoefficient), at: 0)
+            }
+            
+            ///////////////////////////////
+            
+            var denominatorCoefficient: Double = 1
+            var newDenominator: [Component] = []
+            
+            for (i, obj) in denominators.enumerated() {
+                if case .constant(let a) = obj {
+                    denominatorCoefficient *= a
+                } else {
+                    newDenominator.append(obj)
+                }
+            }
+            if denominatorCoefficient != 1 {
+                newDenominator.insert(.constant(denominatorCoefficient), at: 0)
+            }
+            return (newNumerators, newDenominator)
+
         case .quotient(let a, let b):
             var numerators = collectNumeratorsDenominators(a).0
             var denominators = collectNumeratorsDenominators(a).1
@@ -675,9 +705,25 @@ func rectifySimplifiedComponent(_ c: Component) -> Component {
                 }
             }
             if numeratorCoefficient != 1 {
-                numerators.insert(.constant(numeratorCoefficient), at: 0)
+                newNumerators.insert(.constant(numeratorCoefficient), at: 0)
             }
-            return (numerators, denominators)
+            
+            ///////////////////////////////
+            
+            var denominatorCoefficient: Double = 1
+            var newDenominator: [Component] = []
+            
+            for (i, obj) in denominators.enumerated() {
+                if case .constant(let a) = obj {
+                    denominatorCoefficient *= a
+                } else {
+                    newDenominator.append(obj)
+                }
+            }
+            if denominatorCoefficient != 1 {
+                newDenominator.insert(.constant(denominatorCoefficient), at: 0)
+            }
+            return (newNumerators, newDenominator)
         }
     }
 }
