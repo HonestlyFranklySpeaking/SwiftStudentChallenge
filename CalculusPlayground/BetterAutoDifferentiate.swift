@@ -274,7 +274,8 @@ func textify(_ component: Component) -> String {
 
 // Differentiates a fucntion directory
 func differentiate(_ directory: Component) -> Component {
-    switch directory {
+    let c = purgeDifferenceQuotients(directory)
+    switch c {
     case .variable:
         return Component.constant(1)
         
@@ -320,6 +321,29 @@ func differentiate(_ directory: Component) -> Component {
         return .difference(differentiate(a), differentiate(b))
     case .quotient(let a, let b):
         return differentiate(.product(a, .power(b, .constant(-1))))
+    }
+    
+    func purgeDifferenceQuotients(_ c: Component) -> Component {
+        switch c {
+        case .difference(let a, let b):
+            return .sum(purgeDifferenceQuotients(a), .product(purgeDifferenceQuotients(b), .constant(-1)))
+        case .quotient(let a, let b):
+            return .product(purgeDifferenceQuotients(a), .power(purgeDifferenceQuotients(b), .constant(-1)))
+        case .sin(let a):
+            return .sin(purgeDifferenceQuotients(a))
+        case .cos(let a):
+            return .cos(purgeDifferenceQuotients(a))
+        case .ln(let a):
+            return .ln(purgeDifferenceQuotients(a))
+        case .product(let a, let b):
+            return .product(purgeDifferenceQuotients(a), purgeDifferenceQuotients(b))
+        case .sum(let a, let b):
+            return .sum(purgeDifferenceQuotients(a), purgeDifferenceQuotients(b))
+        case .power(let a, let b):
+            return .power(purgeDifferenceQuotients(a), purgeDifferenceQuotients(b))
+        case .constant, .variable, .hole:
+            return c
+        }
     }
 }
 
@@ -531,6 +555,101 @@ func simplify(_ component: Component, epsilon: Double = 1e-3) -> Component {
     return current
 }
 
+///Returns nil if is positive, otherwise returns negated value,
+func makeNegativePositive(_ c: Component) -> Component? {
+    switch c {
+    case .hole, .variable, .sin, .cos, .ln, .sum, .difference, .power: return nil
+    case .product(let a, let b):
+        let negatedA = makeNegativePositive(a)
+        let negatedB = makeNegativePositive(b)
+        if negatedA == nil && negatedB != nil {
+            return .product(a, negatedB ?? .hole)
+        } else if negatedA != nil && negatedB == nil {
+            return .product(negatedA ?? .hole, b)
+        } else {
+            return nil
+        }
+    case .quotient(let a, let b):
+        let negatedA = makeNegativePositive(a)
+        let negatedB = makeNegativePositive(b)
+        if negatedA == nil && negatedB != nil {
+            return .quotient(a, negatedB ?? .hole)
+        } else if negatedA != nil && negatedB == nil {
+            return .quotient(negatedA ?? .hole, b)
+        } else {
+            return nil
+        }
+    case .constant(let a): return a < 0 ? .constant(-a) : nil
+    }
+}
+
+///Uses division instead of a*b^-1
+func rectifySimplifiedComponent(_ c: Component) -> Component {
+    switch c {
+    case .constant, .variable, .hole: return c
+    case .sum(let a, let b):          return .sum(rectifySimplifiedComponent(a), rectifySimplifiedComponent(b))
+    case .difference(let a, let b):   return .difference(rectifySimplifiedComponent(a), rectifySimplifiedComponent(b))
+    case .sin(let a):                 return .sin(rectifySimplifiedComponent(a))
+    case .cos(let a):                 return .cos(rectifySimplifiedComponent(a))
+    case .ln(let a):                  return .ln(rectifySimplifiedComponent(a))
+    case .power(let a, let b):
+        let negatedExponent = makeNegativePositive(b)
+        if let negative = negatedExponent {
+            return .quotient(.constant(1), .power(a, negative))
+        } else {
+            return c
+        }
+    case .product, .quotient:
+        var (nums, denoms) = collectNumeratorsDenominators(c)
+        var currentNum: Component
+        if nums.count > 0 {
+            currentNum = nums.removeFirst()
+            for i in nums {
+                currentNum = .product(currentNum, i)
+            }
+        } else {
+            currentNum = .constant(1)
+        }
+        
+        guard denoms.count > 0 else {
+            return currentNum
+        }
+        var currentDenom = denoms.removeFirst()
+        for i in nums {
+            currentDenom = .product(currentDenom, i)
+        }
+        
+        return .quotient(currentNum, currentDenom)
+    }
+    
+    func collectNumeratorsDenominators(_ c: Component) -> ([Component], [Component]) {
+        switch c {
+        case .constant, .variable, .hole, .sum, .difference, .sin, .cos, .ln: return ([c], [])
+        case .power(let a, let b):
+            if let negatedB = makeNegativePositive(b) {
+                return ([], [.power(a, negatedB)])
+            } else {
+                return ([c], [])
+            }
+        case .product(let a, let b):
+            var numerators = collectNumeratorsDenominators(a).0
+            var denominators = collectNumeratorsDenominators(a).1
+            numerators.append(contentsOf: collectNumeratorsDenominators(b).0)
+            denominators.append(contentsOf: collectNumeratorsDenominators(b).1)
+            numerators.sort { structureKey($0) < structureKey($1) }
+            denominators.sort { structureKey($0) < structureKey($1) }
+            return (numerators, denominators)
+        case .quotient(let a, let b):
+            var numerators = collectNumeratorsDenominators(a).0
+            var denominators = collectNumeratorsDenominators(a).1
+            numerators.append(contentsOf: collectNumeratorsDenominators(b).1)
+            denominators.append(contentsOf: collectNumeratorsDenominators(b).0)
+            numerators.sort { structureKey($0) < structureKey($1) }
+            denominators.sort { structureKey($0) < structureKey($1) }
+            return (numerators, denominators)
+        }
+    }
+}
 struct BetterAutoDifferentiateDemoView: View {
     @State private var xValue: Double = 2.0
 
