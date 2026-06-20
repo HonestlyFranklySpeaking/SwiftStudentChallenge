@@ -636,16 +636,16 @@ func rectifySimplifiedComponent(_ c: Component) -> Component {
             var denominators = collectNumeratorsDenominators(a).1
             numerators.append(contentsOf: collectNumeratorsDenominators(b).0)
             denominators.append(contentsOf: collectNumeratorsDenominators(b).1)
-            numerators.sort { structureKey($0) < structureKey($1) }
-            denominators.sort { structureKey($0) < structureKey($1) }
+            numerators.sort { structureKey($0) > structureKey($1) }
+            denominators.sort { structureKey($0) > structureKey($1) }
             return (numerators, denominators)
         case .quotient(let a, let b):
             var numerators = collectNumeratorsDenominators(a).0
             var denominators = collectNumeratorsDenominators(a).1
             numerators.append(contentsOf: collectNumeratorsDenominators(b).1)
             denominators.append(contentsOf: collectNumeratorsDenominators(b).0)
-            numerators.sort { structureKey($0) < structureKey($1) }
-            denominators.sort { structureKey($0) < structureKey($1) }
+            numerators.sort { structureKey($0) > structureKey($1) }
+            denominators.sort { structureKey($0) > structureKey($1) }
             return (numerators, denominators)
         }
     }
