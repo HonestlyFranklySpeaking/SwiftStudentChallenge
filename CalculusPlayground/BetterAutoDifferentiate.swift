@@ -397,7 +397,6 @@ private func asPower(_ c: Component) -> (base: Component, exp: Component) {
     if case .power(let b, let e) = c { return (b, e) }
     return (c, .constant(1))
 }
-
 /// Algebraically simplifies a Component to a canonical form.
 ///
 /// Beyond local identities (`*1`, `+0`, `^1`, `*0 -> 0`, `^0 -> 1`) and
@@ -425,6 +424,7 @@ func simplify(_ component: Component, epsilon: Double = 1e-3) -> Component {
         case (_, .constant(1)):                       return base
         case (.constant(1), _):                       return .constant(1)
         case (.constant(let bv), .constant(let ev)):  return .constant(fold(pow(bv, ev)))
+        case (.power(let b, let e), let x):           return .power(b, .product(e, x))
         default:                                      return .power(base, exp)
         }
     }
@@ -595,7 +595,7 @@ func rectifySimplifiedComponent(_ c: Component) -> Component {
     case .power(let a, let b):
         let negatedExponent = makeNegativePositive(b)
         if let negative = negatedExponent {
-            return .quotient(.constant(1), .power(a, negative))
+            return .quotient(.constant(1), (negative == .constant(1)) ? a : .power(a, negative))
         } else {
             return c
         }
