@@ -22,6 +22,8 @@ nonisolated indirect enum Component: Equatable, Codable {
     case sin(_ arg: Component)
     case cos(_ arg: Component)
     case hole // an empty slot waiting to be filled by the editor
+    case difference(_ a1: Component, _ a2: Component)
+    case quotient(_ a1: Component, _ a2: Component)
 }
 
 extension Component {
@@ -40,9 +42,15 @@ extension Component {
         case .sum(let a, let b):
             return idx == 0 ? .sum(a.replacing(at: rest, with: new), b)
                             : .sum(a, b.replacing(at: rest, with: new))
+        case .difference(let a, let b):
+            return idx == 0 ? .difference(a.replacing(at: rest, with: new), b)
+            : .difference(a, b.replacing(at: rest, with: new))
         case .product(let a, let b):
             return idx == 0 ? .product(a.replacing(at: rest, with: new), b)
                             : .product(a, b.replacing(at: rest, with: new))
+        case .quotient(let a, let b):
+            return idx == 0 ? .quotient(a.replacing(at: rest, with: new), b)
+                            : .quotient(a, b.replacing(at: rest, with: new))
         case .power(let base, let e):
             return idx == 0 ? .power(base.replacing(at: rest, with: new), e)
                             : .power(base, e.replacing(at: rest, with: new))
@@ -64,7 +72,7 @@ extension Component {
         case .hole: return true
         case .variable, .constant: return false
         case .ln(let a), .sin(let a), .cos(let a): return a.hasHole
-        case .sum(let a, let b), .product(let a, let b), .power(let a, let b):
+        case .sum(let a, let b), .product(let a, let b), .power(let a, let b), .difference(let a, let b), .quotient(let a, let b):
             return a.hasHole || b.hasHole
         }
     }
@@ -148,10 +156,18 @@ struct Expression: Identifiable, Hashable {
                 let f1 = evaluator(for: a1)
                 let f2 = evaluator(for: a2)
                 return { x in f1(x) + f2(x) }
+            case .difference(let a, let b):
+                let f1 = evaluator(for: a)
+                let f2 = evaluator(for: b)
+                return { x in f1(x) - f2(x) }
             case .product(let f1, let f2):
                 let f1 = evaluator(for: f1)
                 let f2 = evaluator(for: f2)
                 return { x in f1(x) * f2(x) }
+            case .quotient(let a, let b):
+                let f1 = evaluator(for: a)
+                let f2 = evaluator(for: b)
+                return { x in f1(x) / f2(x) }
             case .power(let b, let e):
                 let base = evaluator(for: b)
                 let exp = evaluator(for: e)
@@ -249,6 +265,10 @@ func textify(_ component: Component) -> String {
         return "cos(\(textify(arg)))"
     case .hole:
         return "□"
+    case .difference(let a, let b):
+        return "\(textify(a)) + (-\(textify(b)))"
+    case .quotient(let a, let b):
+        return textify(simplify(.product(a, .power(b, .constant(-1)))))
     }
 }
 
@@ -296,6 +316,10 @@ func differentiate(_ directory: Component) -> Component {
     case .hole:
         // The derivative of an unknown is still unknown.
         return .hole
+    case .difference(let a, let b):
+        return .difference(differentiate(a), differentiate(b))
+    case .quotient(let a, let b):
+        return differentiate(.product(a, .power(b, .constant(-1))))
     }
 }
 
@@ -316,15 +340,17 @@ private func foldConstant(_ value: Double, epsilon: Double) -> Double {
 /// *canonicalize* never depends on how we *display*.
 private func structureKey(_ c: Component) -> String {
     switch c {
-    case .variable:            return "x"
-    case .constant(let v):     return "c(\(v))"
-    case .sum(let a, let b):   return "S(\(structureKey(a)),\(structureKey(b)))"
-    case .product(let a, let b): return "P(\(structureKey(a)),\(structureKey(b)))"
-    case .power(let b, let e): return "W(\(structureKey(b)),\(structureKey(e)))"
-    case .ln(let a):           return "L(\(structureKey(a)))"
-    case .sin(let a):          return "N(\(structureKey(a)))"
-    case .cos(let a):          return "O(\(structureKey(a)))"
-    case .hole:                return "H"
+    case .variable:                 return "x"
+    case .constant(let v):          return "c(\(v))"
+    case .sum(let a, let b):        return "S(\(structureKey(a)),\(structureKey(b)))"
+    case .difference:               return structureKey(simplify(c))
+    case .product(let a, let b):    return "P(\(structureKey(a)),\(structureKey(b)))"
+    case .quotient:                 return structureKey(simplify(c))
+    case .power(let b, let e):      return "W(\(structureKey(b)),\(structureKey(e)))"
+    case .ln(let a):                return "L(\(structureKey(a)))"
+    case .sin(let a):               return "N(\(structureKey(a)))"
+    case .cos(let a):               return "O(\(structureKey(a)))"
+    case .hole:                     return "H"
     }
 }
 
@@ -473,7 +499,9 @@ func simplify(_ component: Component, epsilon: Double = 1e-3) -> Component {
         case .variable:        return c
         case .constant(let v): return .constant(fold(v))
         case .sum:             return simplifySum(c)
+        case .difference(let a, let b): return simplifySum(.sum(a, .product(b, .constant(-1))))
         case .product:         return simplifyProduct(c)
+        case .quotient(let a, let b):        return simplifyProduct(.product(a, .power(b, .constant(-1))))
         case .power(let b, let e):
             return simplifyPower(simp(b), simp(e))
         case .ln(let arg):

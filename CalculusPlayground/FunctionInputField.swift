@@ -11,15 +11,17 @@ import SwiftUI
 
 func getColor(for component: Component) -> Color {
     switch component {
-    case .constant: return .blue
-    case .variable: return .brown
-    case .product:  return .red
-    case .sum:      return .orange
-    case .power:    return .green
-    case .ln:       return .indigo
-    case .sin:      return .cyan
-    case .cos:      return .mint
-    case .hole:     return .gray
+    case .constant:   return .blue
+    case .variable:   return .brown
+    case .product:    return .red
+    case .quotient:   return .red
+    case .sum:        return .orange
+    case .difference: return .orange
+    case .power:      return .green
+    case .ln:         return .indigo
+    case .sin:        return .cyan
+    case .cos:        return .mint
+    case .hole:       return .gray
     }
 }
 
@@ -125,7 +127,15 @@ struct Tile: View {
             chrome {
                 HStack(spacing: effPad) {
                     child(lhs, 0)
-                    glyph("×")
+                    child(rhs, 1)
+                }
+            }
+        
+        case .quotient(let lhs, let rhs):
+            chrome {
+                HStack(spacing: effPad) {
+                    child(lhs, 0)
+                    glyph("÷")
                     child(rhs, 1)
                 }
             }
@@ -135,6 +145,15 @@ struct Tile: View {
                 HStack(spacing: effPad) {
                     child(lhs, 0)
                     glyph("+")
+                    child(rhs, 1)
+                }
+            }
+        
+        case .difference(let lhs, let rhs):
+            chrome {
+                HStack(spacing: effPad) {
+                    child(lhs, 0)
+                    glyph("-")
                     child(rhs, 1)
                 }
             }
@@ -215,7 +234,9 @@ struct FunctionInputField: View {
         .variable,
         .constant(constant),
         .sum(.hole, .hole),
+        .difference(.hole, .hole),
         .product(.hole, .hole),
+        .quotient(.hole, .hole),
         .power(.hole, .hole),
         .ln(.hole),
         .sin(.hole),
