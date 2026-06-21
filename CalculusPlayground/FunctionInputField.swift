@@ -18,9 +18,11 @@ func getColor(for component: Component) -> Color {
     case .sum:        return .orange
     case .difference: return .orange
     case .power:      return .green
+    case .sqrt:       return .purple
     case .ln:         return .indigo
     case .sin:        return .cyan
     case .cos:        return .mint
+    case .tan:        return .pink
     case .hole:       return .gray
     }
 }
@@ -167,7 +169,10 @@ struct Tile: View {
                     child(exp, 1, childScale: scale * exponentScale)
                 }
             }
-            
+        case .sqrt(let arg):
+            chrome {
+                HStack(spacing: effPad) { glyph(" √"); child(arg, 0) }
+            }
         case .ln(let arg):
             chrome {
                 HStack(spacing: effPad) { glyph(" ln"); child(arg, 0) }
@@ -178,6 +183,10 @@ struct Tile: View {
                 HStack(spacing: effPad) { glyph(" sin"); child(arg, 0) }
             }
             
+        case .tan(let arg):
+            chrome {
+                HStack(spacing: effPad) { glyph(" tan"); child(arg, 0) }
+            }
         case .cos(let arg):
             chrome {
                 HStack(spacing: effPad) { glyph(" cos"); child(arg, 0) }
@@ -227,6 +236,8 @@ struct FunctionInputField: View {
     @State private var pad = 4.0
     
     
+    
+    
     @State private var constant: Double = 2.0
     /// Templates the user drags into the canvas. Composite tiles start out full
     /// of holes; the trailing `.hole` acts as an eraser that clears a slot.
@@ -238,9 +249,11 @@ struct FunctionInputField: View {
         .product(.hole, .hole),
         .quotient(.hole, .hole),
         .power(.hole, .hole),
+        .sqrt(.hole),
         .ln(.hole),
         .sin(.hole),
         .cos(.hole),
+        .tan(.hole),
         .hole
     ]}
     
@@ -250,7 +263,7 @@ struct FunctionInputField: View {
     
     var body: some View {
         NavigationStack {
-            ScrollView {
+            Group {
                 VStack(alignment: .leading, spacing: 18) {
                     // Canvas: the function being built.
                     
@@ -266,28 +279,6 @@ struct FunctionInputField: View {
                         RoundedRectangle(cornerRadius: 44)
                             .fill(.thinMaterial)
                     }
-                    
-                   ////////
-                    Text("f′(x) = unrectified \(textify(simplify(differentiate(component))))").font(.headline)
-                    if component.hasHole {
-                        Text("Fill every slot to see the derivative.")
-                            .foregroundStyle(.secondary)
-                            .font(.callout)
-                    } else {
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            Tile(component: (simplify(differentiate(component))),
-                                 order: 0, pad: pad)
-                            .padding(4)
-                        }
-                        .clipShape(RoundedRectangle(cornerRadius: 36))
-                        .padding(12)
-                        .background {
-                            RoundedRectangle(cornerRadius: 44)
-                                .fill(.thinMaterial)
-                        }
-                    }
-                    
-                    ////////
                     
                     // Live derivative — only once every slot is filled.
                     
@@ -310,9 +301,7 @@ struct FunctionInputField: View {
                         }
                     }
                     
-                    Spacer(minLength: 120)
-                    // Palette of draggable building blocks.
-                    
+                    Spacer()
                     HStack {
                         Text("Const:")
                             .font(.headline).monospaced()
@@ -354,6 +343,7 @@ struct FunctionInputField: View {
                             ForEach(Array(palette.enumerated()), id: \.offset) { _, template in
                                 Tile(component: template, order: 0, pad: pad)
                                     .draggable(template)
+                                    
                                     .buttonStyle(.borderless)
                             }
                         }
@@ -373,8 +363,6 @@ struct FunctionInputField: View {
                         Spacer()
                     }
                     
-                    
-                    // Controls.
                     HStack {
                         Text("Scale")
                         Slider(value: $pad, in: 2...12)

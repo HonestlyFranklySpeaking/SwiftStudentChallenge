@@ -16,11 +16,13 @@ nonisolated indirect enum Component: Equatable, Codable {
     case sum(_ a1: Component, _ a2: Component)
     case product(_ f1: Component, _ f2: Component)
     case power(_ b: Component, _ e: Component)
+    case sqrt(_ arg: Component)
     case variable
     case constant(_ value: Double)
     case ln(_ arg: Component) // <-- NEW: natural logarithm
     case sin(_ arg: Component)
     case cos(_ arg: Component)
+    case tan(_ arg: Component)
     case hole // an empty slot waiting to be filled by the editor
     case difference(_ a1: Component, _ a2: Component)
     case quotient(_ a1: Component, _ a2: Component)
@@ -54,9 +56,11 @@ extension Component {
         case .power(let base, let e):
             return idx == 0 ? .power(base.replacing(at: rest, with: new), e)
                             : .power(base, e.replacing(at: rest, with: new))
+        case .sqrt(let arg): return idx == 0 ? .sqrt(arg.replacing(at: rest, with: new)) : self
         case .ln(let arg):  return idx == 0 ? .ln(arg.replacing(at: rest, with: new))  : self
         case .sin(let arg): return idx == 0 ? .sin(arg.replacing(at: rest, with: new)) : self
         case .cos(let arg): return idx == 0 ? .cos(arg.replacing(at: rest, with: new)) : self
+        case .tan(let arg): return idx == 0 ? .tan(arg.replacing(at: rest, with: new)) : self
         case .variable, .constant, .hole:
             return self // leaves have no children
         }
@@ -71,7 +75,7 @@ extension Component {
         switch self {
         case .hole: return true
         case .variable, .constant: return false
-        case .ln(let a), .sin(let a), .cos(let a): return a.hasHole
+        case .ln(let a), .sin(let a), .cos(let a), .tan(let a), .sqrt(let a): return a.hasHole
         case .sum(let a, let b), .product(let a, let b), .power(let a, let b), .difference(let a, let b), .quotient(let a, let b):
             return a.hasHole || b.hasHole
         }
@@ -172,9 +176,15 @@ struct Expression: Identifiable, Hashable {
                 let base = evaluator(for: b)
                 let exp = evaluator(for: e)
                 return { x in pow(base(x), exp(x)) }
+            case .sqrt(let arg):
+                let evalArg = evaluator(for: arg)
+                return { x in sqrt(evalArg(x)) }
             case .ln(let arg):
                 let evalArg = evaluator(for: arg)
                 return { x in log(evalArg(x)) }
+            case .tan(let arg):
+                let evalArg = evaluator(for: arg)
+                return { x in tan(evalArg(x)) }
             case .sin(let arg):
                 let evalArg = evaluator(for: arg)
                 return { x in sin(evalArg(x)) }
@@ -256,13 +266,16 @@ func textify(_ component: Component) -> String {
             return "1 / \(d)"
         }
         return "\(base(b))^\(factor(e))"
-
+    case .sqrt(let arg):
+        return "√(\(textify(arg)))"
     case .ln(let arg):
         return "ln(\(textify(arg)))"
     case .sin(let arg):
         return "sin(\(textify(arg)))"
     case .cos(let arg):
         return "cos(\(textify(arg)))"
+    case .tan(let arg):
+        return "tan(\(textify(arg)))"
     case .hole:
         return "□"
     case .difference(let a, let b):
@@ -274,7 +287,7 @@ func textify(_ component: Component) -> String {
 
 // Differentiates a fucntion directory
 func differentiate(_ directory: Component) -> Component {
-    let c = purgeDifferenceQuotients(directory)
+    let c = directory
     switch c {
     case .variable:
         return Component.constant(1)
@@ -305,7 +318,9 @@ func differentiate(_ directory: Component) -> Component {
         // d/dx ln(f(x)) = f'(x)/f(x)
         let argPrime = differentiate(arg)
         return Component.product(argPrime, Component.power(arg, Component.constant(-1)))
-        
+    case .sqrt(let arg):
+        let argPrime = differentiate(arg)
+        return Component.product(argPrime, .product(.constant(0.5), .power(arg, .constant(-0.5))))
     case .sin(let arg):
         // d/dx ln(f(x)) = f'(x)/f(x)
         let argPrime = differentiate(arg)
@@ -314,6 +329,9 @@ func differentiate(_ directory: Component) -> Component {
         // d/dx ln(f(x)) = f'(x)/f(x)
         let argPrime = differentiate(arg)
         return Component.product(argPrime, .product(.constant(-1), .sin(arg)))
+    case .tan(let arg):
+        let argPrime = differentiate(arg)
+        return Component.product(argPrime, .power(.cos(arg), .constant(-2)))
     case .hole:
         // The derivative of an unknown is still unknown.
         return .hole
@@ -321,29 +339,6 @@ func differentiate(_ directory: Component) -> Component {
         return .difference(differentiate(a), differentiate(b))
     case .quotient(let a, let b):
         return differentiate(.product(a, .power(b, .constant(-1))))
-    }
-    
-    func purgeDifferenceQuotients(_ c: Component) -> Component {
-        switch c {
-        case .difference(let a, let b):
-            return .sum(purgeDifferenceQuotients(a), .product(purgeDifferenceQuotients(b), .constant(-1)))
-        case .quotient(let a, let b):
-            return .product(purgeDifferenceQuotients(a), .power(purgeDifferenceQuotients(b), .constant(-1)))
-        case .sin(let a):
-            return .sin(purgeDifferenceQuotients(a))
-        case .cos(let a):
-            return .cos(purgeDifferenceQuotients(a))
-        case .ln(let a):
-            return .ln(purgeDifferenceQuotients(a))
-        case .product(let a, let b):
-            return .product(purgeDifferenceQuotients(a), purgeDifferenceQuotients(b))
-        case .sum(let a, let b):
-            return .sum(purgeDifferenceQuotients(a), purgeDifferenceQuotients(b))
-        case .power(let a, let b):
-            return .power(purgeDifferenceQuotients(a), purgeDifferenceQuotients(b))
-        case .constant, .variable, .hole:
-            return c
-        }
     }
 }
 
@@ -375,6 +370,7 @@ private func structureKey(_ c: Component) -> String {
     case .sin(let a):               return "N(\(structureKey(a)))"
     case .cos(let a):               return "O(\(structureKey(a)))"
     case .hole:                     return "H"
+    default:                        return ""
     }
 }
 
@@ -528,6 +524,8 @@ func simplify(_ component: Component, epsilon: Double = 1e-3) -> Component {
         case .quotient(let a, let b):        return simplifyProduct(.product(a, .power(b, .constant(-1))))
         case .power(let b, let e):
             return simplifyPower(simp(b), simp(e))
+        case .sqrt(let arg):
+            return simp(.power(arg, .constant(0.5)))
         case .ln(let arg):
             let a = simp(arg)
             if case .constant(let v) = a { return .constant(fold(log(v))) }
@@ -540,6 +538,8 @@ func simplify(_ component: Component, epsilon: Double = 1e-3) -> Component {
             let a = simp(arg)
             if case .constant(let v) = a { return .constant(fold(cos(v))) }
             return .cos(a)
+        case .tan(let arg):
+            return simp(.quotient(.sin(arg), .cos(arg)))
         case .hole:
             return c
         }
@@ -558,7 +558,7 @@ func simplify(_ component: Component, epsilon: Double = 1e-3) -> Component {
 ///Returns nil if is positive, otherwise returns negated value,
 func makeNegativePositive(_ c: Component) -> Component? {
     switch c {
-    case .hole, .variable, .sin, .cos, .ln, .sum, .difference, .power: return nil
+    case .hole, .variable, .sin, .cos, .ln, .tan, .sqrt, .sum, .difference, .power: return nil
     case .product(let a, let b):
         let negatedA = makeNegativePositive(a)
         let negatedB = makeNegativePositive(b)
@@ -591,6 +591,7 @@ func rectifySimplifiedComponent(_ c: Component) -> Component {
     case .difference(let a, let b):   return .difference(rectifySimplifiedComponent(a), rectifySimplifiedComponent(b))
     case .sin(let a):                 return .sin(rectifySimplifiedComponent(a))
     case .cos(let a):                 return .cos(rectifySimplifiedComponent(a))
+    case .tan(let a):                 return .tan(rectifySimplifiedComponent(a))
     case .ln(let a):                  return .ln(rectifySimplifiedComponent(a))
     case .power(let a, let b):
         let negatedExponent = makeNegativePositive(b)
@@ -599,6 +600,7 @@ func rectifySimplifiedComponent(_ c: Component) -> Component {
         } else {
             return c
         }
+    case .sqrt(let a):                return .sqrt(rectifySimplifiedComponent(a))
     case .product(let a, let b):
         var (nums, denoms) = collectNumeratorsDenominators(.product(rectifySimplifiedComponent(a), rectifySimplifiedComponent(b)))
         var currentNum: Component
@@ -645,7 +647,7 @@ func rectifySimplifiedComponent(_ c: Component) -> Component {
     
     func collectNumeratorsDenominators(_ c: Component) -> ([Component], [Component]) {
         switch c {
-        case .constant, .variable, .hole, .sum, .difference, .sin, .cos, .ln: return ([c], [])
+        case .constant, .variable, .hole, .sum, .difference, .sin, .cos, .tan, .sqrt, .ln: return ([c], [])
         case .power(let a, let b):
             if let negatedB = makeNegativePositive(b) {
                 return ([], [.power(a, negatedB)])
