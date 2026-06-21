@@ -615,7 +615,7 @@ func rectifySimplifiedComponent(_ c: Component) -> Component {
             return currentNum
         }
         var currentDenom = denoms.removeFirst()
-        for i in nums {
+        for i in denoms {
             currentDenom = .product(currentDenom, i)
         }
         
@@ -636,7 +636,7 @@ func rectifySimplifiedComponent(_ c: Component) -> Component {
             return currentNum
         }
         var currentDenom = denoms.removeFirst()
-        for i in nums {
+        for i in denoms {
             currentDenom = .product(currentDenom, i)
         }
         
