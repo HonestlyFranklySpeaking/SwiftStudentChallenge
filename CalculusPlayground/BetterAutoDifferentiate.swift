@@ -410,7 +410,7 @@ private func asPower(_ c: Component) -> (base: Component, exp: Component) {
 /// - Parameter epsilon: tolerance for snapping folded constants to integers.
 ///   Defaults to 1e-3 so approximations of e (2.718) collapse cleanly. Pass 0
 ///   for exact folding only.
-func simplify(_ component: Component, epsilon: Double = 1e-3) -> Component {
+func simplify(_ component: Component, epsilon: Double = 1e-6) -> Component {
     func fold(_ v: Double) -> Double { foldConstant(v, epsilon: epsilon) }
 
     // f^0 = 1, f^1 = f, 1^f = 1, fold constant powers. base/exp are pre-simplified.
@@ -421,7 +421,6 @@ func simplify(_ component: Component, epsilon: Double = 1e-3) -> Component {
         case (.constant(1), _):                       return .constant(1)
         case (.constant(let bv), .constant(let ev)):  return .constant(fold(pow(bv, ev)))
         case (.power(let b, let e), let x):           return .power(b, .product(e, x))
-        case (_, .constant(0.5)):                     return .sqrt(base)
         default:                                      return .power(base, exp)
         }
     }
@@ -556,95 +555,76 @@ func simplify(_ component: Component, epsilon: Double = 1e-3) -> Component {
     return current
 }
 
-///Returns nil if is positive, otherwise returns negated value,
-func makeNegativePositive(_ c: Component) -> Component? {
-    switch c {
-    case .hole, .variable, .sin, .cos, .ln, .tan, .sqrt, .sum, .difference, .power: return nil
-    case .product(let a, let b):
-        let negatedA = makeNegativePositive(a)
-        let negatedB = makeNegativePositive(b)
-        if negatedA == nil && negatedB != nil {
-            return .product(a, negatedB ?? .hole)
-        } else if negatedA != nil && negatedB == nil {
-            return .product(negatedA ?? .hole, b)
-        } else {
-            return nil
-        }
-    case .quotient(let a, let b):
-        let negatedA = makeNegativePositive(a)
-        let negatedB = makeNegativePositive(b)
-        if negatedA == nil && negatedB != nil {
-            return .quotient(a, negatedB ?? .hole)
-        } else if negatedA != nil && negatedB == nil {
-            return .quotient(negatedA ?? .hole, b)
-        } else {
-            return nil
-        }
-    case .constant(let a): return a < 0 ? .constant(-a) : nil
-    }
-}
 
 ///Uses division instead of a*b^-1
+
 func rectifySimplifiedComponent(_ c: Component) -> Component {
-    switch c {
-    case .constant, .variable, .hole: return c
-    case .sum(let a, let b):          return .sum(rectifySimplifiedComponent(a), rectifySimplifiedComponent(b))
-    case .difference(let a, let b):   return .difference(rectifySimplifiedComponent(a), rectifySimplifiedComponent(b))
-    case .sin(let a):                 return .sin(rectifySimplifiedComponent(a))
-    case .cos(let a):                 return .cos(rectifySimplifiedComponent(a))
-    case .tan(let a):                 return .tan(rectifySimplifiedComponent(a))
-    case .ln(let a):                  return .ln(rectifySimplifiedComponent(a))
-    case .power(let a, let b):
-        let negatedExponent = makeNegativePositive(b)
-        if let negative = negatedExponent {
-            return .quotient(.constant(1), (negative == .constant(1)) ? a : .power(a, negative))
-        } else {
-            return c
-        }
-    case .sqrt(let a):                return .sqrt(rectifySimplifiedComponent(a))
-    case .product(let a, let b):
-        var (nums, denoms) = collectNumeratorsDenominators(.product(rectifySimplifiedComponent(a), rectifySimplifiedComponent(b)))
-        var currentNum: Component
-        if nums.count > 0 {
-            currentNum = nums.removeFirst()
-            for i in nums {
-                currentNum = .product(currentNum, i)
+    
+    return reduceHalfPowers(main(c))
+    
+    
+    func main(_ c: Component) -> Component {
+        switch c {
+        case .constant, .variable, .hole: return c
+        case .sum(let a, let b):          return .sum(rectifySimplifiedComponent(a), rectifySimplifiedComponent(b))
+        case .difference(let a, let b):   return .difference(rectifySimplifiedComponent(a), rectifySimplifiedComponent(b))
+        case .sin(let a):                 return .sin(rectifySimplifiedComponent(a))
+        case .cos(let a):                 return .cos(rectifySimplifiedComponent(a))
+        case .tan(let a):                 return .tan(rectifySimplifiedComponent(a))
+        case .ln(let a):                  return .ln(rectifySimplifiedComponent(a))
+        case .power(let a, let b):
+            let negatedExponent = makeNegativePositive(b)
+            if let negative = negatedExponent {
+                return .quotient(.constant(1), (negative == .constant(1)) ? a : .power(a, negative))
+            } else {
+                return c
             }
-        } else {
-            currentNum = .constant(1)
-        }
-        
-        guard denoms.count > 0 else {
-            return currentNum
-        }
-        var currentDenom = denoms.removeFirst()
-        for i in denoms {
-            currentDenom = .product(currentDenom, i)
-        }
-        
-        return .quotient(currentNum, currentDenom)
-    case .quotient(let a, let b):
-        var (nums, denoms) = collectNumeratorsDenominators(.quotient(rectifySimplifiedComponent(a), rectifySimplifiedComponent(b)))
-        var currentNum: Component
-        if nums.count > 0 {
-            currentNum = nums.removeFirst()
-            for i in nums {
-                currentNum = .product(currentNum, i)
+        case .sqrt(let a):                return .sqrt(rectifySimplifiedComponent(a))
+        case .product(let a, let b):
+            var (nums, denoms) = collectNumeratorsDenominators(.product(rectifySimplifiedComponent(a), rectifySimplifiedComponent(b)))
+            var currentNum: Component
+            if nums.count > 0 {
+                currentNum = nums.removeFirst()
+                for i in nums {
+                    currentNum = .product(currentNum, i)
+                }
+            } else {
+                currentNum = .constant(1)
             }
-        } else {
-            currentNum = .constant(1)
+            
+            guard denoms.count > 0 else {
+                return currentNum
+            }
+            var currentDenom = denoms.removeFirst()
+            for i in denoms {
+                currentDenom = .product(currentDenom, i)
+            }
+            
+            return .quotient(currentNum, currentDenom)
+        case .quotient(let a, let b):
+            var (nums, denoms) = collectNumeratorsDenominators(.quotient(rectifySimplifiedComponent(a), rectifySimplifiedComponent(b)))
+            var currentNum: Component
+            if nums.count > 0 {
+                currentNum = nums.removeFirst()
+                for i in nums {
+                    currentNum = .product(currentNum, i)
+                }
+            } else {
+                currentNum = .constant(1)
+            }
+            
+            guard denoms.count > 0 else {
+                return currentNum
+            }
+            var currentDenom = denoms.removeFirst()
+            for i in denoms {
+                currentDenom = .product(currentDenom, i)
+            }
+            
+            return .quotient(currentNum, currentDenom)
         }
-        
-        guard denoms.count > 0 else {
-            return currentNum
-        }
-        var currentDenom = denoms.removeFirst()
-        for i in denoms {
-            currentDenom = .product(currentDenom, i)
-        }
-        
-        return .quotient(currentNum, currentDenom)
     }
+    
     
     func collectNumeratorsDenominators(_ c: Component) -> ([Component], [Component]) {
         switch c {
@@ -696,7 +676,7 @@ func rectifySimplifiedComponent(_ c: Component) -> Component {
                     }
                 }
             }
-
+            
             if numeratorCoefficient != 1 {
                 newNumerators.insert(.constant(numeratorCoefficient), at: 0)
             }
@@ -731,7 +711,7 @@ func rectifySimplifiedComponent(_ c: Component) -> Component {
                 newDenominator.insert(.constant(denominatorCoefficient), at: 0)
             }
             return (newNumerators, newDenominator)
-
+            
         case .quotient(let a, let b):
             var numerators = collectNumeratorsDenominators(a).0
             var denominators = collectNumeratorsDenominators(a).1
@@ -789,12 +769,56 @@ func rectifySimplifiedComponent(_ c: Component) -> Component {
                         newDenominator.append(obj)
                     }
                 }
-                    
+                
             }
             if denominatorCoefficient != 1 {
                 newDenominator.insert(.constant(denominatorCoefficient), at: 0)
             }
             return (newNumerators, newDenominator)
+        }
+        
+        
+    }
+    
+    ///Returns nil if is positive, otherwise returns negated value,
+    func makeNegativePositive(_ c: Component) -> Component? {
+        switch c {
+        case .hole, .variable, .sin, .cos, .ln, .tan, .sqrt, .sum, .difference, .power: return nil
+        case .product(let a, let b):
+            let negatedA = makeNegativePositive(a)
+            let negatedB = makeNegativePositive(b)
+            if negatedA == nil && negatedB != nil {
+                return .product(a, negatedB ?? .hole)
+            } else if negatedA != nil && negatedB == nil {
+                return .product(negatedA ?? .hole, b)
+            } else {
+                return nil
+            }
+        case .quotient(let a, let b):
+            let negatedA = makeNegativePositive(a)
+            let negatedB = makeNegativePositive(b)
+            if negatedA == nil && negatedB != nil {
+                return .quotient(a, negatedB ?? .hole)
+            } else if negatedA != nil && negatedB == nil {
+                return .quotient(negatedA ?? .hole, b)
+            } else {
+                return nil
+            }
+        case .constant(let a): return a < 0 ? .constant(-a) : nil
+        }
+    }
+    
+    func reduceHalfPowers(_ c: Component) -> Component {
+        switch c {
+        case .constant, .hole, .variable: return c
+        case .ln(let a), .sin(let a), .cos(let a), .tan(let a), .sqrt(let a): return c.replacing(at: [0], with: reduceHalfPowers(a))
+        case .product(let a, let b), .sum(let a, let b), .difference(let a, let b), .quotient(let a, let b): return c.replacing(at: [0], with: reduceHalfPowers(a)).replacing(at: [1], with: reduceHalfPowers(b))
+        case .power(let base, let exp):
+            if exp == .constant(0.5) {
+                return .sqrt(reduceHalfPowers(base))
+            } else {
+                return .power(reduceHalfPowers(base), reduceHalfPowers(exp))
+            }
         }
     }
 }
