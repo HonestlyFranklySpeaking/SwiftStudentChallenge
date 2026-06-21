@@ -685,12 +685,13 @@ func rectifySimplifiedComponent(_ c: Component) -> Component {
                             denominators.remove(at: index)
                         }
                         
+                    } else {
+                        if denominators.contains(obj) {} else {
+                            newNumerators.append(obj)
+                        }
                     }
                 } else {
                     if denominators.contains(obj) {} else {
-                        if case .quotient(let a, let b) = obj {
-                            print("QuoTIENT!!!!")
-                        }
                         newNumerators.append(obj)
                     }
                 }
@@ -715,6 +716,10 @@ func rectifySimplifiedComponent(_ c: Component) -> Component {
                             newNumerators.remove(at: index)
                         }
                         
+                    } else {
+                        if numerators.contains(obj) {} else {
+                            newDenominator.append(obj)
+                        }
                     }
                 } else {
                     if numerators.contains(obj) {} else {
@@ -744,6 +749,10 @@ func rectifySimplifiedComponent(_ c: Component) -> Component {
                             denominators.remove(at: index)
                         }
                         
+                    } else {
+                        if denominators.contains(obj) {} else {
+                            newNumerators.append(obj)
+                        }
                     }
                 } else {
                     if denominators.contains(obj) {} else {
@@ -770,12 +779,17 @@ func rectifySimplifiedComponent(_ c: Component) -> Component {
                             newNumerators.remove(at: index)
                         }
                         
+                    } else {
+                        if numerators.contains(obj) {} else {
+                            newDenominator.append(obj)
+                        }
                     }
                 } else {
                     if numerators.contains(obj) {} else {
                         newDenominator.append(obj)
                     }
                 }
+                    
             }
             if denominatorCoefficient != 1 {
                 newDenominator.insert(.constant(denominatorCoefficient), at: 0)
