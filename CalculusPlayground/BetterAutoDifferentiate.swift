@@ -431,6 +431,7 @@ func simplify(_ component: Component, epsilon: Double = 1e-6) -> Component {
         return factors.dropFirst().reduce(first) { .product($0, $1) }
     }
 
+    
     // Flatten a product, fold its numeric coefficient, and merge same-base factors.
     func simplifyProduct(_ c: Component) -> Component {
         var coeff = 1.0
