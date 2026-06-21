@@ -421,6 +421,7 @@ func simplify(_ component: Component, epsilon: Double = 1e-3) -> Component {
         case (.constant(1), _):                       return .constant(1)
         case (.constant(let bv), .constant(let ev)):  return .constant(fold(pow(bv, ev)))
         case (.power(let b, let e), let x):           return .power(b, .product(e, x))
+        case (_, .constant(0.5)):                     return .sqrt(base)
         default:                                      return .power(base, exp)
         }
     }
@@ -677,6 +678,14 @@ func rectifySimplifiedComponent(_ c: Component) -> Component {
             for obj in numerators {
                 if case .constant(let a) = obj {
                     numeratorCoefficient *= a
+                } else if case .sin(let a) = obj {
+                    if denominators.contains(.cos(a)) {
+                        newNumerators.append(.tan(a))
+                        if let index = denominators.firstIndex(of: .cos(a)) {
+                            denominators.remove(at: index)
+                        }
+                        
+                    }
                 } else {
                     if denominators.contains(obj) {} else {
                         if case .quotient(let a, let b) = obj {
@@ -699,6 +708,14 @@ func rectifySimplifiedComponent(_ c: Component) -> Component {
             for obj in denominators {
                 if case .constant(let a) = obj {
                     denominatorCoefficient *= a
+                } else if case .sin(let a) = obj {
+                    if newNumerators.contains(.cos(a)) {
+                        newDenominator.append(.tan(a))
+                        if let index = newNumerators.firstIndex(of: .cos(a)) {
+                            newNumerators.remove(at: index)
+                        }
+                        
+                    }
                 } else {
                     if numerators.contains(obj) {} else {
                         newDenominator.append(obj)
@@ -720,6 +737,14 @@ func rectifySimplifiedComponent(_ c: Component) -> Component {
             for obj in numerators {
                 if case .constant(let a) = obj {
                     numeratorCoefficient *= a
+                } else if case .sin(let a) = obj {
+                    if denominators.contains(.cos(a)) {
+                        newNumerators.append(.tan(a))
+                        if let index = denominators.firstIndex(of: .cos(a)) {
+                            denominators.remove(at: index)
+                        }
+                        
+                    }
                 } else {
                     if denominators.contains(obj) {} else {
                         newNumerators.append(obj)
@@ -738,6 +763,14 @@ func rectifySimplifiedComponent(_ c: Component) -> Component {
             for obj in denominators {
                 if case .constant(let a) = obj {
                     denominatorCoefficient *= a
+                } else if case .sin(let a) = obj {
+                    if newNumerators.contains(.cos(a)) {
+                        newDenominator.append(.tan(a))
+                        if let index = newNumerators.firstIndex(of: .cos(a)) {
+                            newNumerators.remove(at: index)
+                        }
+                        
+                    }
                 } else {
                     if numerators.contains(obj) {} else {
                         newDenominator.append(obj)
