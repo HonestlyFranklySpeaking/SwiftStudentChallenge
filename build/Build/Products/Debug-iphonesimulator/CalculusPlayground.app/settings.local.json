@@ -1,8 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Read(//Users/miloullman/Desktop/CalculusPlayground/**)",
-      "Bash(xcodebuild -project CalculusPlayground.xcodeproj -scheme CalculusPlayground -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -derivedDataPath build build)"
-    ]
-  }
-}

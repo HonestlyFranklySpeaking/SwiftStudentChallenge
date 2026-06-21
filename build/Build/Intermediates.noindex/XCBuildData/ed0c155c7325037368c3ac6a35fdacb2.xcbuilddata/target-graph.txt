@@ -1,2 +1,0 @@
-Target dependency graph (1 target)
-Target 'CalculusPlayground' in project 'CalculusPlayground' (no dependencies)
