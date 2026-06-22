@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import SwiftUI
+import SwiftUI; import SwiftData
 import UniformTypeIdentifiers
 
 // Fundamental components making up a function. indirect just means the enum can be recursive.

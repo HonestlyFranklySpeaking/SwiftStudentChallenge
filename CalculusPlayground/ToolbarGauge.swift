@@ -5,7 +5,7 @@
 //  Created by Milo Ullman on 9/1/26.
 //
 
-import SwiftUI
+import SwiftUI; import SwiftData
 
 struct GaugeDemoView: View {
     @State private var currentValue: Double = 125.0

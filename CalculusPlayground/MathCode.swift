@@ -6,7 +6,8 @@
 //
 
 import Foundation
-import SwiftUI
+import SwiftUI; import SwiftData
+
 
 
 ///Represents a ClosedRange<Double> that may be reversed(-1...-4)
@@ -51,8 +52,9 @@ class GraphPoint: Identifiable, CustomStringConvertible {
 }
 
 ///Represents a mathematical function
-class Function: Identifiable, Hashable {
-    static var functionDictionary: [Function: String] = [
+@Model
+final class Function: Identifiable, Hashable, Sendable {
+    static let functionDictionary: [Function: String] = [
         identity: "Identity",
         sine: "Sine",
         square: "Square",
@@ -64,17 +66,17 @@ class Function: Identifiable, Hashable {
     
     //To be expanded upon
     
-    nonisolated let id: UUID = UUID()
+    nonisolated var id: UUID = UUID()
     var derivative: Function? = nil
     ///This gives a view that looks like the function, like Text("x") for identity
-    nonisolated let mathText: String?
-    let transform: (Double) -> Double
+    nonisolated var mathText: String?
+    var transform: (Double) -> Double
     init(transform: @escaping (Double) -> Double, text: String = "Ifshown: ERROR") {
         self.transform = transform
         self.mathText = text
     }
     
-    static var allFunctions: [Function] = [.exp, .sine, .square, .inverse, .identity, .naturalLog, .humpy]
+    static let allFunctions: [Function] = [.exp, .sine, .square, .inverse, .identity, .naturalLog, .humpy]
     
     static let identity: Function = .init(transform: { $0 }, text: "x")
     static let sine: Function = .init(transform: { sin($0) }, text: "sin(x)")

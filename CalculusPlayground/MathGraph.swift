@@ -5,7 +5,7 @@
 //  Created by Milo Ullman on 8/1/26.
 //
 
-import SwiftUI
+import SwiftUI; import SwiftData
 import Charts
 
 ///Represents a set of points, with associated label and type etc.

@@ -5,7 +5,7 @@
 //  Created by Milo Ullman on 18/12/25.
 //
 
-import SwiftUI
+import SwiftUI; import SwiftData
 import Charts
 
 struct TaylorSeriesPlayground: View {

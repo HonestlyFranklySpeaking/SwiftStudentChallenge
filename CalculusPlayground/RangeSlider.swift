@@ -1,4 +1,4 @@
-import SwiftUI
+import SwiftUI; import SwiftData
 
 
 ///Represents a range slider, with two nodes representing top and bottom. 

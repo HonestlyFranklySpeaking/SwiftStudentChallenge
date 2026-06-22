@@ -4,7 +4,7 @@
 //
 //  Created by Timothy Qin on 8/1/26.
 //
-import SwiftUI
+import SwiftUI; import SwiftData
 
 
 struct HomeView: View {
