@@ -5,7 +5,8 @@
 //  Created by Milo Ullman on 23/12/25.
 //
 
-import SwiftUI; import SwiftData
+import SwiftUI
+import SwiftData
 
 @main
 struct CalculusPlaygroundApp: App {

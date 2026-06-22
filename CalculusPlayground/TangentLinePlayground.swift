@@ -5,7 +5,8 @@
 //  Created by Milo Ullman on 18/12/25.
 //
 
-import SwiftUI; import SwiftData
+import SwiftUI
+import SwiftData
 import Charts
 
 struct TangentLinePlayground: View {
