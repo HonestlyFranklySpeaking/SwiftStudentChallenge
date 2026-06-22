@@ -222,7 +222,12 @@ private func isAtom(_ c: Component) -> Bool {
     }
 }
 
-func textify(_ component: Component) -> String {
+func textify(_ comp: Component?) -> String {
+
+    guard let component = comp else {
+        return "invalid"
+    }
+    
     // A power's base needs brackets unless it's atomic: (a+b)^2, but x^2.
     func base(_ c: Component) -> String { isAtom(c) ? textify(c) : "(\(textify(c)))" }
     // A multiplication operand only needs brackets when it's a sum.
@@ -559,20 +564,23 @@ func simplify(_ component: Component, epsilon: Double = 1e-6) -> Component {
 
 ///Uses division instead of a*b^-1
 
-func rectifySimplifiedComponent(_ c: Component) -> Component {
+func rectifySimplifiedComponent(_ c: Component) -> Component? {
     
-    return reduceHalfPowers(main(c))
+    
+    let result = reduceHalfPowers(main(c))
+    
+    return checkForNanInf(result) ? nil : result
     
     
     func main(_ c: Component) -> Component {
         switch c {
         case .constant, .variable, .hole: return c
-        case .sum(let a, let b):          return .sum(rectifySimplifiedComponent(a), rectifySimplifiedComponent(b))
-        case .difference(let a, let b):   return .difference(rectifySimplifiedComponent(a), rectifySimplifiedComponent(b))
-        case .sin(let a):                 return .sin(rectifySimplifiedComponent(a))
-        case .cos(let a):                 return .cos(rectifySimplifiedComponent(a))
-        case .tan(let a):                 return .tan(rectifySimplifiedComponent(a))
-        case .ln(let a):                  return .ln(rectifySimplifiedComponent(a))
+        case .sum(let a, let b):          return .sum(main(a), main(b))
+        case .difference(let a, let b):   return .difference(main(a), main(b))
+        case .sin(let a):                 return .sin(main(a))
+        case .cos(let a):                 return .cos(main(a))
+        case .tan(let a):                 return .tan(main(a))
+        case .ln(let a):                  return .ln(main(a))
         case .power(let a, let b):
             let negatedExponent = makeNegativePositive(b)
             if let negative = negatedExponent {
@@ -580,9 +588,9 @@ func rectifySimplifiedComponent(_ c: Component) -> Component {
             } else {
                 return c
             }
-        case .sqrt(let a):                return .sqrt(rectifySimplifiedComponent(a))
+        case .sqrt(let a):                return .sqrt(main(a))
         case .product(let a, let b):
-            var (nums, denoms) = collectNumeratorsDenominators(.product(rectifySimplifiedComponent(a), rectifySimplifiedComponent(b)))
+            var (nums, denoms) = collectNumeratorsDenominators(.product(main(a), main(b)))
             var currentNum: Component
             if nums.count > 0 {
                 currentNum = nums.removeFirst()
@@ -603,7 +611,7 @@ func rectifySimplifiedComponent(_ c: Component) -> Component {
             
             return .quotient(currentNum, currentDenom)
         case .quotient(let a, let b):
-            var (nums, denoms) = collectNumeratorsDenominators(.quotient(rectifySimplifiedComponent(a), rectifySimplifiedComponent(b)))
+            var (nums, denoms) = collectNumeratorsDenominators(.quotient(main(a), main(b)))
             var currentNum: Component
             if nums.count > 0 {
                 currentNum = nums.removeFirst()
@@ -625,7 +633,6 @@ func rectifySimplifiedComponent(_ c: Component) -> Component {
             return .quotient(currentNum, currentDenom)
         }
     }
-    
     
     func collectNumeratorsDenominators(_ c: Component) -> ([Component], [Component]) {
         switch c {
@@ -822,7 +829,20 @@ func rectifySimplifiedComponent(_ c: Component) -> Component {
             }
         }
     }
+    
+    
+    ///Returns true when a nan or inf is found
+    func checkForNanInf(_ c: Component) -> Bool {
+        switch c {
+        case .variable, .hole: return false
+        case .sum(let a, let b), .difference(let a, let b), .product(let a, let b), .quotient(let a, let b), .power(let a, let b): return checkForNanInf(a) || checkForNanInf(b)
+        case .sin(let a), .cos(let a), .tan(let a), .sqrt(let a), .ln(let a): return checkForNanInf(a)
+        case .constant(let a): return !a.isNormal
+        }
+    }
 }
+
+
 struct BetterAutoDifferentiateDemoView: View {
     @State private var xValue: Double = 2.0
 

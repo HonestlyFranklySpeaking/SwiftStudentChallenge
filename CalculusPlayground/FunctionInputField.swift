@@ -289,7 +289,7 @@ struct FunctionInputField: View {
                             .font(.callout)
                     } else {
                         ScrollView(.horizontal, showsIndicators: false) {
-                            Tile(component: rectifySimplifiedComponent(simplify(differentiate(component))),
+                            Tile(component: rectifySimplifiedComponent(simplify(differentiate(component))) ?? .hole,
                                  order: 0, pad: pad)
                             .padding(4)
                         }
