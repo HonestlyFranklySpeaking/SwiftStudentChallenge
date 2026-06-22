@@ -12,6 +12,55 @@ import UniformTypeIdentifiers
 // Fundamental components making up a function. indirect just means the enum can be recursive.
 // Codable so a Component can ride along as a drag-and-drop payload (see Transferable
 // conformance in FunctionInputField.swift).
+
+nonisolated func evaluator(for component: Component) -> (Double) -> Double {
+    switch component {
+    case .variable:
+        return { x in x }
+    case .constant(let value):
+        return { _ in value }
+    case .sum(let a1, let a2):
+        let f1 = evaluator(for: a1)
+        let f2 = evaluator(for: a2)
+        return { x in f1(x) + f2(x) }
+    case .difference(let a, let b):
+        let f1 = evaluator(for: a)
+        let f2 = evaluator(for: b)
+        return { x in f1(x) - f2(x) }
+    case .product(let f1, let f2):
+        let f1 = evaluator(for: f1)
+        let f2 = evaluator(for: f2)
+        return { x in f1(x) * f2(x) }
+    case .quotient(let a, let b):
+        let f1 = evaluator(for: a)
+        let f2 = evaluator(for: b)
+        return { x in f1(x) / f2(x) }
+    case .power(let b, let e):
+        let base = evaluator(for: b)
+        let exp = evaluator(for: e)
+        return { x in pow(base(x), exp(x)) }
+    case .sqrt(let arg):
+        let evalArg = evaluator(for: arg)
+        return { x in sqrt(evalArg(x)) }
+    case .ln(let arg):
+        let evalArg = evaluator(for: arg)
+        return { x in log(evalArg(x)) }
+    case .tan(let arg):
+        let evalArg = evaluator(for: arg)
+        return { x in tan(evalArg(x)) }
+    case .sin(let arg):
+        let evalArg = evaluator(for: arg)
+        return { x in sin(evalArg(x)) }
+    case .cos(let arg):
+        let evalArg = evaluator(for: arg)
+        return { x in cos(evalArg(x)) }
+    case .hole:
+        // An unfilled slot has no value; surfaces as NaN rather than crashing.
+        return { _ in Double.nan }
+    }
+}
+
+
 nonisolated indirect enum Component: Equatable, Codable {
     case sum(_ a1: Component, _ a2: Component)
     case product(_ f1: Component, _ f2: Component)
@@ -95,116 +144,69 @@ extension Component: Transferable {
     }
 }
 
-struct Expression: Identifiable, Hashable {
-    let id: UUID = UUID()
-    
-    let mathText: String?
-    let transform: (Double) -> Double
-    
-    // This is the thing that is used when differentiating. Its basically a combonation of components that representa a function.
-    var directory: Component
-    
-    init(_ mathText: String? = nil, directory: Component, transform: @escaping (Double) -> Double) {
-        self.mathText = mathText
-        self.transform = transform
-        self.directory = directory
-    }
-    
-    
-    // init via Sum
-    init(_ mathText: String?, a1: Expression, a2: Expression) {
-        self.mathText = mathText
-        
-        self.transform = { x in
-            return a1.transform(x) + a2.transform(x)
-        }
-        
-        self.directory = Component.sum(a1.directory, a2.directory)
-    }
-    
-    // init via Product
-    init(_ mathText: String?, f1: Expression, f2: Expression) {
-        self.mathText = mathText
-        
-        self.transform = { x in
-            return f1.transform(x) * f2.transform(x)
-        }
-        
-        self.directory = Component.product(f1.directory, f2.directory)
-    }
- 
-    // init via power
-    init(_ mathText: String?, b: Expression, e: Expression) {
-        self.mathText = mathText
-        
-        self.transform = { x in
-            return pow(b.transform(x), e.transform(x))
-        }
-        
-        self.directory = Component.power(b.directory, e.directory)
-    }
-    
-    // init from directory
-    init(_ mathText: String?, directory: Component) {
-        self.mathText = mathText
-        self.directory = directory
-        
-        // Recursively derives a transform from a directory.
-        func evaluator(for component: Component) -> (Double) -> Double {
-            switch component {
-            case .variable:
-                return { x in x }
-            case .constant(let value):
-                return { _ in value }
-            case .sum(let a1, let a2):
-                let f1 = evaluator(for: a1)
-                let f2 = evaluator(for: a2)
-                return { x in f1(x) + f2(x) }
-            case .difference(let a, let b):
-                let f1 = evaluator(for: a)
-                let f2 = evaluator(for: b)
-                return { x in f1(x) - f2(x) }
-            case .product(let f1, let f2):
-                let f1 = evaluator(for: f1)
-                let f2 = evaluator(for: f2)
-                return { x in f1(x) * f2(x) }
-            case .quotient(let a, let b):
-                let f1 = evaluator(for: a)
-                let f2 = evaluator(for: b)
-                return { x in f1(x) / f2(x) }
-            case .power(let b, let e):
-                let base = evaluator(for: b)
-                let exp = evaluator(for: e)
-                return { x in pow(base(x), exp(x)) }
-            case .sqrt(let arg):
-                let evalArg = evaluator(for: arg)
-                return { x in sqrt(evalArg(x)) }
-            case .ln(let arg):
-                let evalArg = evaluator(for: arg)
-                return { x in log(evalArg(x)) }
-            case .tan(let arg):
-                let evalArg = evaluator(for: arg)
-                return { x in tan(evalArg(x)) }
-            case .sin(let arg):
-                let evalArg = evaluator(for: arg)
-                return { x in sin(evalArg(x)) }
-            case .cos(let arg):
-                let evalArg = evaluator(for: arg)
-                return { x in cos(evalArg(x)) }
-            case .hole:
-                // An unfilled slot has no value; surfaces as NaN rather than crashing.
-                return { _ in Double.nan }
-            }
-        }
-        
-        self.transform = evaluator(for: directory)
-    }
-    
-    static func == (lhs: Expression, rhs: Expression) -> Bool {
-        lhs.id == rhs.id
-    }
-    nonisolated func hash(into hasher: inout Hasher) { hasher.combine(id) }
-}
+//struct Expression: Identifiable, Hashable {
+//    let id: UUID = UUID()
+//    
+//    let mathText: String?
+//    let transform: (Double) -> Double
+//    
+//    // This is the thing that is used when differentiating. Its basically a combonation of components that representa a function.
+//    var directory: Component
+//    
+//    init(_ mathText: String? = nil, directory: Component, transform: @escaping (Double) -> Double) {
+//        self.mathText = mathText
+//        self.transform = transform
+//        self.directory = directory
+//    }
+//    
+//    
+//    // init via Sum
+//    init(_ mathText: String?, a1: Expression, a2: Expression) {
+//        self.mathText = mathText
+//        
+//        self.transform = { x in
+//            return a1.transform(x) + a2.transform(x)
+//        }
+//        
+//        self.directory = Component.sum(a1.directory, a2.directory)
+//    }
+//    
+//    // init via Product
+//    init(_ mathText: String?, f1: Expression, f2: Expression) {
+//        self.mathText = mathText
+//        
+//        self.transform = { x in
+//            return f1.transform(x) * f2.transform(x)
+//        }
+//        
+//        self.directory = Component.product(f1.directory, f2.directory)
+//    }
+// 
+//    // init via power
+//    init(_ mathText: String?, b: Expression, e: Expression) {
+//        self.mathText = mathText
+//        
+//        self.transform = { x in
+//            return pow(b.transform(x), e.transform(x))
+//        }
+//        
+//        self.directory = Component.power(b.directory, e.directory)
+//    }
+//    
+//    // init from directory
+//    init(_ mathText: String?, directory: Component) {
+//        self.mathText = mathText
+//        self.directory = directory
+//        // Recursively derives a transform from a directory.
+//        
+//        self.transform = evaluator(for: directory)
+//    }
+//    
+//    static func == (lhs: Expression, rhs: Expression) -> Bool {
+//        lhs.id == rhs.id
+//    }
+//    nonisolated func hash(into hasher: inout Hasher) { hasher.combine(id) }
+//}
 
 
 /// Pretty-print a constant: integers drop the trailing `.0` (so we get
@@ -842,44 +844,3 @@ func rectifySimplifiedComponent(_ c: Component) -> Component? {
     }
 }
 
-
-struct BetterAutoDifferentiateDemoView: View {
-    @State private var xValue: Double = 2.0
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Analytical Derivatives")
-                .font(.title).bold()
-            
-            // Let's try f(x) = x^x
-            let powx = Component.sum(.product(.variable, .variable), .product(.constant(-1), .power(.variable, .constant(2))))
-            
-            
-            let expr = Expression("f(x)", directory: powx)
-            let derivativeComponent = differentiate(expr.directory)
-            let simplifiedDerivative = simplify(derivativeComponent)
-            let derivativeExpr = Expression("f'(x)", directory: simplifiedDerivative)
-
-            Group {
-                Text("f(x) = \(textify(expr.directory))")
-                Text("f'(x) = \(textify(derivativeComponent))")
-                Text("Simplified: \(textify(simplifiedDerivative))")
-                HStack {
-                    Text("x =")
-                    Slider(value: $xValue, in: -15...15, step: 0.01)
-                    Text(String(format: "%.2f", xValue))
-                }
-                Text("f(\(String(format: "%.2f", xValue))) = \(expr.transform(xValue))")
-                Text("f'(\(String(format: "%.2f", xValue))) = \(derivativeExpr.transform(xValue))")
-            }
-            .font(.system(.body, design: .monospaced))
-            
-            Spacer()
-        }
-        .padding()
-    }
-}
-
-#Preview {
-    BetterAutoDifferentiateDemoView()
-}

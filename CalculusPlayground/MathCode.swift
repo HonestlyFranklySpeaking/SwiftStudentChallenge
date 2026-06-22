@@ -52,47 +52,73 @@ class GraphPoint: Identifiable, CustomStringConvertible {
 }
 
 ///Represents a mathematical function
+
 @Model
-final class Function: Identifiable, Hashable, Sendable {
-    static let functionDictionary: [Function: String] = [
-        identity: "Identity",
-        sine: "Sine",
-        square: "Square",
-        inverse: "Inverse",
-        exp: "Exponential",
-        naturalLog: "Natural Log",
-        humpy: "Polynomial"
-    ]
-    
-    //To be expanded upon
-    
+final class Function: Identifiable, Hashable, @unchecked Sendable {
+
     nonisolated var id: UUID = UUID()
     var derivative: Function? = nil
-    ///This gives a view that looks like the function, like Text("x") for identity
     nonisolated var mathText: String?
-    var transform: (Double) -> Double
-    init(transform: @escaping (Double) -> Double, text: String = "Ifshown: ERROR") {
-        self.transform = transform
+
+    var name: String = "blank"
+
+    private var directoryData: Data? = nil
+
+    /// Decoded view of `directoryData`; `transform` is rebuilt from it on load.
+    var directory: Component? {
+        get { directoryData.flatMap { try? JSONDecoder().decode(Component.self, from: $0) } }
+        set {
+            directoryData = newValue.flatMap { try? JSONEncoder().encode($0) }
+            _transform = nil // invalidate the cache so it rebuilds from the new tree
+        }
+    }
+
+    
+    @Transient private var _transform: ((Double) -> Double)? = nil
+
+    var transform: (Double) -> Double {
+        get {
+            if let t = _transform { return t }
+            if let d = directory {
+                let t = evaluator(for: d)
+                _transform = t
+                return t
+            }
+            return { _ in Double.nan }
+        }
+        set { _transform = newValue }
+    }
+
+    init(transform: @escaping (Double) -> Double, text: String = "Ifshown: ERROR", name: String = "blank") {
+        self.name = name
         self.mathText = text
+        self._transform = transform
+    }
+
+    init(component: Component) {
+        self.directoryData = try? JSONEncoder().encode(component)
+        self._transform = evaluator(for: component)
+        self.name = "blank"
+        self.mathText = nil
     }
     
     static let allFunctions: [Function] = [.exp, .sine, .square, .inverse, .identity, .naturalLog, .humpy]
     
-    static let identity: Function = .init(transform: { $0 }, text: "x")
-    static let sine: Function = .init(transform: { sin($0) }, text: "sin(x)")
-    static let square: Function = .init(transform: { $0 * $0 }, text: "x^2")
-    static let inverse: Function = .init(transform: { 1 / $0 }, text: "1/x")
-    static let exp: Function = .init(transform: { pow(2.71828, $0) }, text: "e^x")
+    static let identity: Function = .init(transform: { $0 }, text: "x", name: "Identity")
+    static let sine: Function = .init(transform: { sin($0) }, text: "sin(x)", name: "Sine")
+    static let square: Function = .init(transform: { $0 * $0 }, text: "x^2", name: "Square")
+    static let inverse: Function = .init(transform: { 1 / $0 }, text: "1/x", name: "Inverse")
+    static let exp: Function = .init(transform: { pow(2.71828, $0) }, text: "e^x", name: "Exponential")
     
-    static let naturalLog: Function = .init(transform: { log($0) }, text: "ln(x)")
-    static let zero: Function = .init(transform: { 0 * $0 }, text: "0x")
+    static let naturalLog: Function = .init(transform: { log($0) }, text: "ln(x)", name: "Natural Log")
+    static let zero: Function = .init(transform: { 0 * $0 }, text: "0x", name: "Zero")
 
     static let humpy: Function = .init(transform: {
         let x = $0 / 1.5
         let a = (x+10)*(x+10)*(x-15)
         let b = (x+30)*(x+3)*(x-10)*(x-30)
         return a * b / 1200000
-    }, text: "p(x)")
+    }, text: "p(x)", name: "Polynomial")
     
     static func == (lhs: Function, rhs: Function) -> Bool {
         lhs.id == rhs.id

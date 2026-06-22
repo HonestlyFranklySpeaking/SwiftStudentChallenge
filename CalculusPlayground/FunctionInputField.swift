@@ -231,11 +231,67 @@ struct Tile: View {
 
 // MARK: - Editor
 
+struct AddFunctionSheet: View {
+    @Environment(\.dismiss) var dismiss
+    
+    var component: Component
+    var onSubmit: (Function) -> Void
+    
+    @State private var name: String = "My Function"
+    
+    var function: Function {
+        let function = Function(component: component)
+        function.name = name
+        return function
+    }
+    
+    var body: some View {
+        // A sheet does not inherit the presenter's NavigationStack, so it needs
+        // its own — otherwise there is no navigation bar to host the toolbar
+        // items (the title and the cancel/submit buttons) and they don't appear.
+        NavigationStack {
+            Form {
+                Section("Function Name") {
+                    TextField("My Function", text: $name)
+                        .onSubmit {
+                            if name.isEmpty {
+                                name = "My Function"
+                            }
+                        }
+                }
+            }
+            .navigationTitle("Save Function")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button {
+                        dismiss()
+                    } label: {
+                        Image(systemName: "xmark")
+                    }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button {
+                        onSubmit(function)
+                        dismiss()
+                    } label: {
+                        Image(systemName: "checkmark")
+                    }
+                }
+            }
+        }
+    }
+}
+
 struct FunctionInputField: View {
+    @Environment(\.modelContext) var modelContext
+    
+    @Query var userFunctions: [Function]
+    
+    @State var showAddFunctionSheet: Bool = false
+    
     @State private var component: Component = .power(.power(.variable, .constant(2)), .ln(.variable))
-    @State private var pad = 4.0
     
-    
+    @State private var pad = 5.0
     
     
     @State private var constant: Double = 2.0
@@ -267,7 +323,22 @@ struct FunctionInputField: View {
                 VStack(alignment: .leading, spacing: 18) {
                     // Canvas: the function being built.
                     
-                    Text("f(x) =").font(.headline)
+                    if component.hasHole {
+                        Text("f(x) =").font(.headline)
+                    } else {
+                        HStack {
+                            Text("f(x) = ")
+                            Spacer()
+                            Button("Save") {
+                                showAddFunctionSheet.toggle()
+                            }.buttonStyle(.glassProminent)
+                                .sheet(isPresented: $showAddFunctionSheet) {
+                                    AddFunctionSheet(component: component) { function in
+                                        modelContext.insert(function)
+                                    }
+                                }
+                        }
+                    }
                     ScrollView(.horizontal, showsIndicators: false) {
                         Tile(component: component, order: 0, pad: pad,
                              path: [], onReplace: replace)
@@ -282,7 +353,22 @@ struct FunctionInputField: View {
                     
                     // Live derivative — only once every slot is filled.
                     
-                    Text("f′(x) = \(textify(rectifySimplifiedComponent(simplify(differentiate(component)))))").font(.headline)
+                    if component.hasHole {
+                        Text("f′(x) = \(textify(rectifySimplifiedComponent(simplify(differentiate(component)))))").font(.headline)
+                    } else {
+                        HStack {
+                            Text("f'(x) = ")
+                            Spacer()
+                            Button("Save") {
+                                showAddFunctionSheet.toggle()
+                            }.buttonStyle(.glassProminent)
+                                .sheet(isPresented: $showAddFunctionSheet) {
+                                    AddFunctionSheet(component: rectifySimplifiedComponent(simplify(differentiate(component))) ?? Component.constant(67)) { function in
+                                        modelContext.insert(function)
+                                    }
+                                }
+                        }
+                    }
                     if component.hasHole {
                         Text("Fill every slot to see the derivative.")
                             .foregroundStyle(.secondary)
@@ -302,6 +388,7 @@ struct FunctionInputField: View {
                     }
                     
                     Spacer()
+                    
                     HStack {
                         Text("Const:")
                             .font(.headline).monospaced()
@@ -320,16 +407,19 @@ struct FunctionInputField: View {
                         
                         Button("10") {
                             constant = 10
-                        }.buttonStyle(.bordered)
+                        }.buttonStyle(.glass)
                         
                         Button("e") {
                             constant = 2.7182
-                        }.buttonStyle(.bordered)
-                        
+                        }.buttonStyle(.glass)
                         
                         Button("2") {
                             constant = 2
-                        }.buttonStyle(.bordered)
+                        }.buttonStyle(.glass)
+                        
+                        Button("-1") {
+                            constant = -1
+                        }.buttonStyle(.glass)
                         
                     }
                     .padding(12)
@@ -362,13 +452,6 @@ struct FunctionInputField: View {
                             .buttonStyle(.bordered)
                         Spacer()
                     }
-                    
-                    HStack {
-                        Text("Scale")
-                        Slider(value: $pad, in: 2...12)
-                    }
-                    .padding(12)
-                    
                 }
                 .padding()
                 .navigationBarTitleDisplayMode(.inline)
