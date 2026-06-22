@@ -6,7 +6,8 @@
 //
 
 import Foundation
-import SwiftUI; import SwiftData
+import SwiftUI
+import SwiftData
 import UniformTypeIdentifiers
 
 // Fundamental components making up a function. indirect just means the enum can be recursive.
@@ -569,10 +570,70 @@ func simplify(_ component: Component, epsilon: Double = 1e-6) -> Component {
 func rectifySimplifiedComponent(_ c: Component) -> Component? {
     
     
-    let result = reduceHalfPowers(main(c))
+    let result = reduceHalfPowers(main(makeFractions(c)))
     
     return checkForNanInf(result) ? nil : result
     
+    
+    func makeFractions(_ c: Component) -> Component {
+        switch c {
+        case .variable, .hole: return c
+        case .sin(let a): return .sin(makeFractions(a))
+        case .cos(let a): return .cos(makeFractions(a))
+        case .tan(let a): return .tan(makeFractions(a))
+        case .sqrt(let a): return .sqrt(makeFractions(a))
+        case .ln(let a): return .ln(makeFractions(a))
+        case .sum(let a, let b): return .sum(makeFractions(a), makeFractions(b))
+        case .difference(let a, let b): return .difference(makeFractions(a), makeFractions(b))
+        case .product(let a, let b): return .product(makeFractions(a), makeFractions(b))
+        case .quotient(let a, let b): return .quotient(makeFractions(a), makeFractions(b))
+        case .power(let a, let b): return .power(makeFractions(a), (b == .constant(0.5) || b == .constant(-0.5)) ? b : makeFractions(b))
+        case .constant(let a):
+            if let result = reduceFraction(a) {
+                if result.1 == 1 { return c }
+                return .quotient(.constant(Double(result.0)), .constant(Double(result.1)))
+            } else {
+                return c
+            }
+
+        }
+        
+        
+        func reduceFraction(_ input: Double, maxDenom: Int = 12, startDenom: Int = 27720, epsilon: Double = 1) -> (Int, Int)? {
+            var numerator = Int((input * Double(startDenom)).rounded())
+            var denominator = startDenom
+            let primes = getPrimes(max: maxDenom)
+            for i in primes {
+                
+                if i > numerator { break }
+                while true {
+                let potentialNumerator = (Double(numerator) / Double(i))
+                let potentialDenominator = (Double(denominator) / Double(i))
+                    if abs(potentialNumerator - potentialNumerator.rounded()) < epsilon {
+                        numerator = Int(potentialNumerator); denominator = Int(potentialDenominator)
+                    } else {
+                        break
+                    }
+                }
+            }
+            
+            if denominator < maxDenom { return (numerator, denominator) } else { return nil }
+        }
+        
+        func getPrimes(max: Int) -> [Int] {
+            var possibles = Array(2...max)
+            var at = 2
+            var atIndex = -1
+            while atIndex < possibles.count - 1 {
+                atIndex += 1
+                at = possibles[atIndex]
+                let deleteRange = stride(from: 2*at, to: max+1, by: at)
+                possibles.removeAll {a in deleteRange.contains(a)}
+
+            }
+            return possibles
+        }
+    }
     
     func main(_ c: Component) -> Component {
         switch c {
@@ -844,3 +905,10 @@ func rectifySimplifiedComponent(_ c: Component) -> Component? {
     }
 }
 
+
+
+struct simplificationTestView: View {
+    var body: some View {
+        Tile(component: rectifySimplifiedComponent(.constant(0.33333333)) ?? .hole, order: 0)
+    }
+}

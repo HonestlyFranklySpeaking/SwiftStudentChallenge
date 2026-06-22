@@ -4,7 +4,8 @@
 //
 //  Created by Timothy Qin on 21/1/26.
 //
-import SwiftUI; import SwiftData
+import SwiftUI
+import SwiftData
 import Foundation
 
 struct ruler1: View {

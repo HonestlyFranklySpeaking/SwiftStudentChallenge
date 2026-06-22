@@ -6,7 +6,8 @@
 //
 
 import Foundation
-import SwiftUI; import SwiftData
+import SwiftUI
+import SwiftData
 
 
 

@@ -5,7 +5,8 @@
 //  Created by Milo Ullman on 6/1/26.
 //
 
-import SwiftUI; import SwiftData
+import SwiftUI
+import SwiftData
 import Charts
 
 ///A helper class that uses a shared singleton static member (Helpers.shared)

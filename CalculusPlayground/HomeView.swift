@@ -4,7 +4,8 @@
 //
 //  Created by Timothy Qin on 8/1/26.
 //
-import SwiftUI; import SwiftData
+import SwiftUI
+import SwiftData
 
 
 struct HomeView: View {
@@ -48,6 +49,14 @@ struct HomeView: View {
                     
                     Section("Abstract") {
                         
+                    }
+                    
+                    Section("Debug") {
+                        Group {
+                            NavigationLink(destination: simplificationTestView()) {
+                                Text("test")
+                            }
+                        }
                     }
                 }
                 .scrollContentBackground(.hidden)
