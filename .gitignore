@@ -5,6 +5,9 @@
 
 build/
 
+*.swp
+
+
 ## User settings
 xcuserdata/
 CalculusPlayground.xcodeproj/xcuserdata/

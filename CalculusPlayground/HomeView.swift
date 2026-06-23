@@ -50,6 +50,14 @@ struct HomeView: View {
                     Section("Abstract") {
                         
                     }
+                    
+                    Section("Debug") {
+                        Group {
+                            NavigationLink(destination: rectifyTestView()) {
+                                Text("Rectify Test")
+                            }
+                        }
+                    }
                 }
                 .scrollContentBackground(.hidden)
                 .navigationTitle("Math Playgrounds")
